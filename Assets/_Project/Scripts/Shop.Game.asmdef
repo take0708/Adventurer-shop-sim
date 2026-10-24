@@ -4,6 +4,7 @@
     "references": [
         "Shop.Core",
         "Shop.Data",
+        "Unity.InputSystem",
         "UnityEngine.UI",
         "Unity.TextMeshPro"
     ],

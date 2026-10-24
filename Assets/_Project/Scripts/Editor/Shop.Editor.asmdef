@@ -1,0 +1,20 @@
+{
+    "name": "Shop.Editor",
+    "rootNamespace": "Shop.Editor",
+    "references": [
+        "Shop.Core",
+        "Shop.Data",
+        "Shop.Game"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

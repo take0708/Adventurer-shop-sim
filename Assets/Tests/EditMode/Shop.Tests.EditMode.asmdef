@@ -3,6 +3,7 @@
     "rootNamespace": "Shop.Tests.EditMode",
     "references": [
         "Shop.Core",
+        "Shop.Data",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd66fd18c1761984ab3bc33f2615c150, type: 3}
+  m_Name: ShopSizeTable
+  m_EditorClassIdentifier: Shop.Data::Shop.Data.ShopSizeTable
+  _rows:
+  - width: 6
+    height: 5
+    shelfMax: 6
+    counterMax: 2
+    cost: 0
+  - width: 8
+    height: 6
+    shelfMax: 10
+    counterMax: 3
+    cost: 1500
+  - width: 10
+    height: 7
+    shelfMax: 15
+    counterMax: 4
+    cost: 5000

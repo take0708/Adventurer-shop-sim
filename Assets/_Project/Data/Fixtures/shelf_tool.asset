@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 261f43a227090484e96e9c26fa8e73b3, type: 3}
+  m_Name: shelf_tool
+  m_EditorClassIdentifier: Shop.Data::Shop.Data.FixtureData
+  _id: shelf_tool
+  _displayName: "\u9053\u5177\u68DA"
+  _kind: 0
+  _shelfCategory: 0
+  _cost: 100
+  _width: 1
+  _height: 1
+  _walkable: 0
+  _displayMax: 8
+  _restockTicks: 15
+  _ambience: 0
+  _maxCount: 0
+  _countsTowardShelfLimit: 1
+  _usesFreeShelf: 1
+  _sprite: {fileID: 0}
+  _placeholderColor: {r: 0.35, g: 0.7, b: 0.35, a: 1}

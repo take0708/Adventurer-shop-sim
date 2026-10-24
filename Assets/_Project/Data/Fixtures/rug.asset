@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 261f43a227090484e96e9c26fa8e73b3, type: 3}
+  m_Name: rug
+  m_EditorClassIdentifier: Shop.Data::Shop.Data.FixtureData
+  _id: rug
+  _displayName: "\u7D68\u6BEF"
+  _kind: 2
+  _shelfCategory: 0
+  _cost: 150
+  _width: 2
+  _height: 2
+  _walkable: 1
+  _displayMax: 0
+  _restockTicks: 0
+  _ambience: 2
+  _maxCount: 0
+  _countsTowardShelfLimit: 0
+  _usesFreeShelf: 0
+  _sprite: {fileID: 0}
+  _placeholderColor: {r: 0.65, g: 0.25, b: 0.45, a: 0.8}

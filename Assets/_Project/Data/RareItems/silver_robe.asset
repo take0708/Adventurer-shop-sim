@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 078515b3a8d44a2409031fecb4544cf5, type: 3}
+  m_Name: silver_robe
+  m_EditorClassIdentifier: Shop.Data::Shop.Data.RareItemData
+  _id: silver_robe
+  _displayName: "\u9280\u7CF8\u306E\u30ED\u30FC\u30D6"
+  _buyPrice: 150
+  _sellPrice: 250
+  _appearStar: 3
+  _job: {fileID: 11400000, guid: 873a71f1ccf057a47a56f25295ec20b0, type: 2}
+  _repBonus: 6
+  _icon: {fileID: 0}

@@ -2,7 +2,7 @@
 
 | 項目 | 内容 |
 |---|---|
-| 版 | 0.4 |
+| 版 | 0.5 |
 | 作成日 | 2026-10-22 |
 | 更新日 | 2026-10-24 |
 | 対象 | [youken.md](youken.md) の T-09。ゲームの動きの設計は [kihonsekkei.md](kihonsekkei.md) |
@@ -98,7 +98,8 @@ Adventurer-shop-sim/              ← Unity プロジェクト兼 Git リポジ�
 | `Shop.Core` | ルール。`noEngineReferences: true` | なし |
 | `Shop.Data` | ScriptableObject の定義と、Core 用の値への変換 | Core |
 | `Shop.Game` | View・UI | Core, Data |
-| `Shop.Tests.EditMode` | Core のテスト | Core |
+| `Shop.Editor` | エディタ拡張（データのアセットを一式作る、シーンを組むなど）。`Scripts/Editor/`、エディタのときだけ | Core, Data, Game |
+| `Shop.Tests.EditMode` | Core のテストと、ScriptableObject の値の確認（K-09） | Core, Data |
 
 ### 3.3 Core の主なクラス（案）
 
@@ -217,6 +218,12 @@ Unity 標準のもの（`Library/` `Temp/` `Obj/` `Logs/` `UserSettings/` `Build
 | バッチモード | `bash tools/run_editmode_tests.sh`（エディタでプロジェクトを開いていないとき）。結果は `TestResults-EditMode.xml` |
 | MCP 経由 | `Unity_RunCommand` で `TestRunnerApi` を使って EditMode テストを動かす。テストは非同期で終わるので、結果を `SessionState` に入れておき、もう一度 `Unity_RunCommand` を呼んで読み出す。`RunCommand` の中でファイルを読み書きすると「ユーザーの操作が必要」として拒否されるので、ファイルには書かない |
 
+MCP で Play して確かめるときの注意:
+
+- エディタが裏にあるとフレームが進まない。`EditorApplication.isPaused = true` → `EditorApplication.Step()` で 1 フレームずつ進める
+- `Unity_Camera_Capture` にカメラの ID を渡すと失敗する。ID なし（Scene ビューの撮影）なら撮れる。IMGUI（OnGUI）のパネルは写らない
+- `RunCommand` では `using System.Reflection` が使えない（許可されていない名前空間）
+
 ---
 
 ## 10. 決まっていないこと
@@ -240,6 +247,26 @@ Unity 標準のもの（`Library/` `Temp/` `Obj/` `Logs/` `UserSettings/` `Build
 | MCP | ✓ Unity AI Assistant の MCP サーバーでつないだ（1 章） |
 | Git | ✓ 最初のコミットを行い、GitHub の公開リポジトリ（take0708/Adventurer-shop-sim）に push した |
 
+### M2 店内（2026-10-24 時点）
+
+| 項目 | 状態 |
+|---|---|
+| Core | ✓ `Tile`、`CommandResult`、Config 一式、`ConfigValidator`（V1〜V9）、`ShopLayout`、`PlacementValidator`、`GridPathfinder`、`GameSession`（配置コマンドと拡張）、`ShopState`（お金と無料枠だけ）、イベント（開始・日・お金・配置・拡張） |
+| Data | ✓ ScriptableObject 7 種と `GameDatabase`、`ConfigBuilder`。アセットはメニュー **Shop/Create Step1 Data** で youken 5 章の値から作る（`Assets/_Project/Data/`） |
+| Game | ✓ `GameRunner`、`EventRouter`、`GridView`、`FixtureView`、`PlacementMode`、`FailReasonText`。シーンはメニュー **Shop/Build Game Scene** で `Assets/_Project/Scenes/Game.unity` に作る |
+| テスト | ✓ 47 件すべて成功（UT-CFG-01〜03、UT-LAY-01〜08、UT-PTH-01〜02 ほか） |
+| 画面 | △ Play で床・壁・入口・道・配置物の表示と、配置コマンドの結果は確かめた。**マウスでの配置・移動・撤去と左のパネルは、まだ手で確かめていない** |
+
+詳細設計からの変更・先送り:
+
+- `ShopState` はお金と無料枠だけ先に作った（L3 の判定に要るため）。評判・星・売上は M3〜M5
+- `ExpandShop` は簡単なので M2 で入れた（詳細設計では M6）。UT-LAY-08 も M2 で通している
+- UT-LAY-09（客の立っているマスに置くと客が動く）は客がいないので M3 に回す
+- `JobDef` は欲しいものをコンストラクタで受け取る（欲しがるのは問屋の品だけなので循環しない）
+- `BalanceConfig` は項目が多いので public フィールドにした（ほかの SO は `[SerializeField] private` ＋読み取りプロパティ）
+- 配置モードのパネルは仮に IMGUI（OnGUI）。uGUI の画面は M4（`BottomMenu` など）で作り、そのときに置き換える
+- エディタ拡張のために `Shop.Editor` アセンブリを足した（3.2）
+
 ---
 
 ## 変更履歴
@@ -250,3 +277,4 @@ Unity 標準のもの（`Library/` `Temp/` `Obj/` `Logs/` `UserSettings/` `Build
 | 0.2 | 2026-10-24 | M1 の実態に合わせて更新（テンプレート、パッケージ、asmdef の置き場所、実装済みクラス）。基本設計への参照を追加。9〜11 章（テストの実行、決まっていないこと、進み具合）を追加 |
 | 0.3 | 2026-10-24 | 2 章のフォルダ構成を変更（Unity プロジェクトのルート＝リポジトリのルート、AdventurerShop/ を廃止） |
 | 0.4 | 2026-10-24 | M1 完了。MCP の接続方法、Unity AI のアセット生成を使わないこと、MCP 経由のテストの動かし方を追記 |
+| 0.5 | 2026-10-24 | M2 の進み具合と詳細設計からの変更を追記。3.2 に `Shop.Editor` を足し、テストの参照に `Shop.Data` を足した（K-09）。9 章に MCP で Play するときの注意 |
