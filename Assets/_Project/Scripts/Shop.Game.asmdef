@@ -1,0 +1,19 @@
+{
+    "name": "Shop.Game",
+    "rootNamespace": "Shop.Game",
+    "references": [
+        "Shop.Core",
+        "Shop.Data",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

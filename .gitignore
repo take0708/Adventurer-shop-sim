@@ -1,0 +1,60 @@
+# ---- Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+/Assets/Plugins/Editor/JetBrains*
+/.vs/
+/.idea/
+/.vscode/
+/.consulo/
+/*.csproj
+/*.unityproj
+/*.sln
+/*.slnx
+/*.suo
+/*.tmp
+/*.user
+/*.userprefs
+/*.pidb
+/*.booproj
+/*.svd
+/*.pdb
+/*.mdb
+/*.opendb
+/*.VC.db
+/sysinfo.txt
+/crashlytics-build.properties
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# ---- 公開リポジトリに入れないもの（kousei.md 7.1）
+# 再配布できない素材（入手元は README に書く）
+/Assets/ThirdParty/
+/Assets/ThirdParty.meta
+# unityroom の HMAC キーなどの秘密情報
+/Assets/_Project/Secrets/
+/Assets/_Project/Secrets.meta
+
+# ---- テスト結果
+/TestResults*.xml
+
+# ---- Python
+__pycache__/
+*.pyc
+
+# ---- OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Unity Version Control（Plastic）の作業領域
+/.plastic/
+/ignore.conf

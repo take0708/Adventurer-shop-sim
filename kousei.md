@@ -1,0 +1,258 @@
+# Unity プロジェクト構成（Step 1）
+
+| 項目 | 内容 |
+|---|---|
+| 版 | 0.2 |
+| 作成日 | 2026-10-22 |
+| 更新日 | 2026-10-24 |
+| 対象 | [youken.md](youken.md) の T-09。ゲームの動きの設計は [kihonsekkei.md](kihonsekkei.md) |
+
+凡例: **（確定）** = 相談して決めたもの / **（案）** = 実装しながら変えてよいもの
+
+---
+
+## 1. 開発環境
+
+| 項目 | 内容 |
+|---|---|
+| Unity（確定） | **6000.5.6f1**（インストール済み） |
+| テンプレート（確定） | 2D（URP）。Unity 同梱の `com.unity.template.2d-cross-platform-2d 6.1.5` から作成 |
+| パッケージ | テンプレートから collab-proxy（Unity のバージョン管理）と Visual Scripting を外した。Test Framework 1.4.5、uGUI 2.0（TextMeshPro を含む）、URP 17.6、Input System 1.19 など |
+| Unity の操作（案） | Unity エディタは **MCP でつないで作業する**予定。バッチモードでの作成・テストは、ライセンス未認証で止まったため保留（[11 章](#11-進み具合)） |
+| ビルド先（確定） | WebGL（unityroom）。WebGL モジュールはインストール済み |
+| 将来のビルド先 | Windows（Steam）。Windows モジュールはインストール済み |
+| UI（確定） | **uGUI**（Canvas）＋ TextMeshPro |
+| 数値データ（確定） | **ScriptableObject** |
+| バージョン管理（確定） | **Git ＋ GitHub（公開リポジトリ）** |
+
+---
+
+## 2. フォルダ構成
+
+Unity プロジェクトは `C:\dev\Adventurer-shop-sim` で、そのフォルダ自体をリポジトリのルートにする（確定、2026-10-24 変更）。文書・シミュレーションは Unity プロジェクトのルートに同居させる（Unity は `Assets/` などの外のファイルを読まない）。
+
+```
+Adventurer-shop-sim/              ← Unity プロジェクト兼 Git リポジトリのルート
+├─ youken.md / balance.md / kousei.md / kabeuchi.md / zankadai.md
+├─ tools/
+│   └─ balance_sim.py             ← 数値シミュレーション
+├─ Packages/manifest.json
+├─ ProjectSettings/
+└─ Assets/
+    ├─ Settings/              ← テンプレートの URP 設定（そのまま使う）
+    ├─ Scenes/SampleScene.unity ← テンプレートのサンプル。Title / Game を作ったら消す
+    ├─ _Project/              ← 自作のものはすべてここ（アセットストア品と混ざらない）
+        ├─ Scenes/            ← Title.unity / Game.unity（M2 以降で作る）
+        ├─ Scripts/
+        │   ├─ Shop.Game.asmdef ← View/ と UI/ をまとめるアセンブリ
+        │   ├─ Core/          ← ゲームのルール（Unity に依存しない C#）。Shop.Core.asmdef
+        │   ├─ Data/          ← ScriptableObject の定義。Shop.Data.asmdef
+        │   ├─ View/          ← 店内の表示（客・棚のスプライト、移動の補間）
+        │   └─ UI/            ← HUD・メニュー・月末収支・結果発表
+        ├─ Data/              ← ScriptableObject のアセット（数値の実体）
+        ├─ Prefabs/
+        ├─ Sprites/
+        ├─ Fonts/
+        └─ Audio/
+    └─ Tests/
+        └─ EditMode/          ← Core のテスト。Shop.Tests.EditMode.asmdef
+```
+
+- 空のフォルダには `.gitkeep` を置いて Git に残している（Unity は `.` で始まるファイルを無視する）
+- `Library/` などのほか、`Assets/ThirdParty/` と `Assets/_Project/Secrets/` は Git に入れない（7.1）
+
+### シーン（案）
+
+| シーン | 内容 |
+|---|---|
+| Title | タイトル、スタートボタン |
+| Game | 店内、HUD、メニュー。月末収支・年末審査・結果発表はパネルとして重ねて表示 |
+
+---
+
+## 3. スクリプトの分け方
+
+### 3.1 基本方針: ルールと見た目を分ける（案）
+
+```
+ ScriptableObject（数値）
+        │ 起動時に変換
+        ▼
+ ┌──────────── Core（普通の C#）────────────┐
+ │ 時間・お金・在庫・客・評判・行商人のルール │ ← EditMode テストで確かめる
+ └───────────────────────────────────────┘
+        │ イベント（客が来た / 売れた / 月が終わった / 星が上がった…）
+        ▼
+ View / UI（MonoBehaviour）… 受け取って描くだけ。ルールは持たない
+```
+
+- **Core は UnityEngine を参照しない**。Python シミュレーションと同じ中身を C# で持つので、数値の挙動をテストで比べられる
+- 乱数は Core が持つ（シードを指定できる）。同じシードなら同じ展開になり、不具合を再現しやすい
+- 客の位置もマス単位で Core が管理する。View はマスの間を滑らかに動かすだけ
+
+### 3.2 アセンブリ定義（案）
+
+| アセンブリ | 中身 | 参照先 |
+|---|---|---|
+| `Shop.Core` | ルール。`noEngineReferences: true` | なし |
+| `Shop.Data` | ScriptableObject の定義と、Core 用の値への変換 | Core |
+| `Shop.Game` | View・UI | Core, Data |
+| `Shop.Tests.EditMode` | Core のテスト | Core |
+
+### 3.3 Core の主なクラス（案）
+
+| クラス | 役割 | 対応する要件 |
+|---|---|---|
+| `TimeConfig` | 時間の単位（1 日 20 Tick、1 か月 30 日、24 か月）。**実装済み** | FR-TIME-01, 02 |
+| `GameClock` | ゲーム内の時間。日・月末・年末・終了を知らせる。倍速・一時停止は持たない（GameRunner 側）。**実装済み** | FR-TIME |
+| `IRandom` / `SeededRandom` | シード指定できる乱数（xorshift64*。System.Random は使わない）。**実装済み** | — |
+| `ShopState` | 所持金、評判ポイント、星、総売上 | FR-REP, FR-END |
+| `Warehouse` | 倉庫の在庫 | FR-STOCK |
+| `Wholesaler` | 問屋。星に応じた品揃え | FR-STOCK-06 |
+| `ShopLayout` | グリッド、配置物、広さの段階 | FR-LAYOUT, FR-EXP |
+| `Shelf` | 並べる商品、補充（並ぶ数と補充間隔。特売台もこれで表す） | FR-STOCK-03〜05, 08, FR-LAYOUT-06 |
+| `CustomerSpawner` | 来店数・職業・欲しいもの・予算の決定 | FR-CUST |
+| `Customer` | 入店 → 棚へ移動 → 購入 → 会計待ち → 退店 の状態 | FR-CUST |
+| `GridPathfinder` | マス目上の経路探索（NavMesh は使わない） | FR-CUST-05 |
+| `ReputationSystem` | 評判の増減、星の判定（月末、下がらない） | FR-REP |
+| `Merchant` | 行商人の来訪と品揃え | FR-MERCH |
+| `MonthlyReport` | 月の収支の集計 | FR-TIME-05 |
+
+このほか `GameSession`・`Counter`・`PlacementValidator` などは [kihonsekkei.md 9.3](kihonsekkei.md#93-クラスの責務kouseimd-33-に追加するもの)。
+
+### 3.4 時間の進め方（案）
+
+- Core は固定の刻み（tick）で進める。View は `Update` で経過時間を tick に変換して Core に渡す（1 Tick = 0.1 秒。詳細は [kihonsekkei.md 2 章](kihonsekkei.md#2-時間の設計)）
+- 倍速は tick の量を増やすだけ。`Time.timeScale` は使わない（UI アニメーションが速くならないように）
+- 倍速は 1x / 2x の 2 段階から始める
+- 倍速と一時停止は GameRunner（Game 側）が持ち、Core は呼ばれた回数だけ進む
+
+---
+
+## 4. 数値データ（ScriptableObject）
+
+[youken.md の 5 章](youken.md#5-数値仕様step-1-初期値) の表と 1 対 1 で対応させる。
+
+| アセット | 中身 | youken.md |
+|---|---|---|
+| `ItemData`（8 個） | 固定 ID、名前、系統、仕入れ値、売値、解禁の星、アイコン | 5.1 |
+| `RareItemData`（5 個） | 名前、仕入れ値、売値、買う職業、評判ボーナス、出始める星 | 5.7 |
+| `JobData`（3 個） | 職業名、欲しいものの重み | 5.3 |
+| `StarTable` | 星ごとの必要評判、来店数、予算、行商人の出現確率 | 5.2, 5.4, 5.7 |
+| `FixtureData`（棚 3・特売台・カウンター・装飾 3） | 費用、大きさ（マス）、通れるか、並ぶ数、補充間隔、置ける数、雰囲気値 | 5.5 |
+| `ShopSizeTable` | 広さの段階ごとのマス数と費用 | 5.6 |
+| `BalanceConfig` | 初期資金、評判の増減値、雰囲気の効果、時間、会計・待ち時間、初期配置、無料枠、払い戻し率 | 5.4, 5.5, FR-TIME |
+
+基本設計で足した項目の詳細は [kihonsekkei.md 8.2](kihonsekkei.md#82-scriptableobjectkouseimd-4-章からの追加変更)。
+
+- 数値を変えたら、youken.md・balance.md・[tools/balance_sim.py](tools/balance_sim.py) もそろえる
+- 遊びながら調整するときは、プレイ中にインスペクターで変えて試し、決まった値をアセットに残す
+
+---
+
+## 5. 画面・表示（案）
+
+| 項目 | 内容 |
+|---|---|
+| 解像度 | 960×600 を基準（unityroom の標準的な埋め込みサイズ。公開時に確認） |
+| ドット絵 | Pixel Perfect Camera を使う。1 マスの大きさは素材が決まってから（T-11） |
+| 日本語フォント | WebGL では OS のフォントが使えないため、**日本語フォントを TextMeshPro 用に同梱する**。フリーライセンス（OFL など）のものを選ぶ |
+| 仮の絵 | 素材が決まるまでは、色付きの四角と文字で作る |
+
+---
+
+## 6. unityroom 対応（案）
+
+- ランキングへのスコア送信は unityroom の公式ライブラリを使う（導入方法は公開前に最新の手順を確認する）
+- スコア送信用の**秘密鍵（HMAC キー）はリポジトリに入れない**（公開リポジトリのため）
+- Step 1 はセーブ機能なし（1 プレイ約 25 分で遊び切る）
+
+---
+
+## 7. Git・GitHub（公開リポジトリ）
+
+### 7.1 管理しないもの（.gitignore）
+
+Unity 標準のもの（`Library/` `Temp/` `Obj/` `Logs/` `UserSettings/` `Build/` など）に加えて、次を入れない。
+
+| 入れないもの | 理由 |
+|---|---|
+| unityroom の HMAC キー | 公開されると、だれでもスコアを送れてしまう |
+| 再配布が禁止されている素材 | 素材サイトの規約で、リポジトリでの公開が禁止されていることが多い。アセットストアの有料素材も同じ |
+
+再配布できない素材は、`Assets/ThirdParty/`（.gitignore で除外）に置き、入手元を [README.md](README.md) に書いておく。秘密情報は `Assets/_Project/Secrets/`（同じく除外）に置く。
+
+改行は `.gitattributes` で、Unity の YAML アセット（`.unity` `.prefab` `.asset` `.meta` など）を LF にそろえている。
+
+### 7.2 気をつけること
+
+- **コミットに書かれるメールアドレスも公開される**。気になる場合は GitHub の「noreply」アドレスをコミットに使う
+- Git LFS は最初は使わない。画像や音が大きくなってきたら検討する
+
+---
+
+## 8. 作る順番（案）
+
+小さく動かしながら積み上げる。各段階で遊べる状態にする。
+
+| # | 段階 | できること |
+|---|---|---|
+| M1 | 土台 | プロジェクト作成、Git、フォルダ・アセンブリ、Core のテストが動く（**途中**。11 章） |
+| M2 | 店内 | グリッド表示、棚・カウンターを置ける |
+| M3 | 客と販売 | 客が来て棚へ歩き、買って帰る。お金が増える |
+| M4 | 仕入れと時間 | 問屋で仕入れ、倉庫から補充、月末の収支、倍速 |
+| M5 | 評判 | 評判ポイント、星、解禁、吹き出し |
+| M6 | 行商人・拡張・装飾 | 快感①、店の拡張、雰囲気値 |
+| M7 | 終わり方 | 年末審査、2 年後の結果発表、タイトル画面 |
+| M8 | 公開準備 | WebGL ビルド、unityroom の限定公開でテスト、ランキング対応 |
+
+---
+
+## 9. テストの実行
+
+| 方法 | 内容 |
+|---|---|
+| Unity エディタ | Window → General → Test Runner → EditMode → Run All |
+| バッチモード | `bash tools/run_editmode_tests.sh`（エディタでプロジェクトを開いていないとき）。結果は `TestResults-EditMode.xml` |
+| MCP 経由（予定） | Unity を MCP でつないだら、そこから Test Runner を動かす |
+
+---
+
+## 10. 決まっていないこと
+
+| 項目 | メモ |
+|---|---|
+| Unity を MCP でつなぐ方法 | 使う MCP サーバーとつなぎ方は未定 |
+| コミットに使う名前・メールアドレス | Git の user.name / user.email が未設定。公開リポジトリなので GitHub の noreply アドレスがおすすめ（7.2） |
+| GitHub のリポジトリ | まだ作っていない |
+
+---
+
+## 11. 進み具合
+
+### M1（2026-10-24 時点）
+
+| 項目 | 状態 |
+|---|---|
+| Unity プロジェクト作成 | △ テンプレートのファイルは置けた。バッチモードでの作成はライセンス未認証で途中終了（Unity でまだ一度も開いていない） |
+| フォルダ・アセンブリ定義 | ✓ 2 章のとおり。asmdef 4 つ |
+| Core のクラス | ✓ `TimeConfig`、`GameClock`、`IRandom` / `SeededRandom` |
+| Core のテスト | △ EditMode テスト 11 件を書いた。Unity ではまだ動かしていない。Core を dotnet（C# 9）でビルドしてエラー 0、テストと同じ中身を簡単なプログラムで動かして合格 |
+| Git | △ `git init`（main）、`.gitignore`、`.gitattributes` まで。コミットはまだ |
+
+M1 を終えるのに残っていること:
+
+1. Unity でプロジェクトを開く（MCP でつなぐ準備を含む）。新しく足したファイルの `.meta` と `Packages/packages-lock.json` ができる
+2. EditMode テストを Unity で動かして全件成功を確かめる
+3. コミットに使う名前・メールアドレスを決めて、最初のコミット
+4. GitHub に公開リポジトリを作って push
+
+---
+
+## 変更履歴
+
+| 版 | 日付 | 内容 |
+|---|---|---|
+| 0.1 | 2026-10-22 | 初版 |
+| 0.2 | 2026-10-24 | M1 の実態に合わせて更新（テンプレート、パッケージ、asmdef の置き場所、実装済みクラス）。基本設計への参照を追加。9〜11 章（テストの実行、決まっていないこと、進み具合）を追加 |
+| 0.3 | 2026-10-24 | 2 章のフォルダ構成を変更（Unity プロジェクトのルート＝リポジトリのルート、AdventurerShop/ を廃止） |

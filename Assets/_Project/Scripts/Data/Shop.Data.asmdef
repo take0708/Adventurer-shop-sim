@@ -1,0 +1,16 @@
+{
+    "name": "Shop.Data",
+    "rootNamespace": "Shop.Data",
+    "references": [
+        "Shop.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
