@@ -2,7 +2,7 @@
 
 | 項目 | 内容 |
 |---|---|
-| 版 | 0.2 |
+| 版 | 0.4 |
 | 作成日 | 2026-10-22 |
 | 更新日 | 2026-10-24 |
 | 対象 | [youken.md](youken.md) の T-09。ゲームの動きの設計は [kihonsekkei.md](kihonsekkei.md) |
@@ -18,7 +18,8 @@
 | Unity（確定） | **6000.5.6f1**（インストール済み） |
 | テンプレート（確定） | 2D（URP）。Unity 同梱の `com.unity.template.2d-cross-platform-2d 6.1.5` から作成 |
 | パッケージ | テンプレートから collab-proxy（Unity のバージョン管理）と Visual Scripting を外した。Test Framework 1.4.5、uGUI 2.0（TextMeshPro を含む）、URP 17.6、Input System 1.19 など |
-| Unity の操作（案） | Unity エディタは **MCP でつないで作業する**予定。バッチモードでの作成・テストは、ライセンス未認証で止まったため保留（[11 章](#11-進み具合)） |
+| Unity の操作（確定） | Unity エディタは **MCP でつないで作業する**。Unity 公式の AI Assistant（`com.unity.ai.assistant` 2.21.0-pre.1）の MCP サーバーを使う。エディタで C# を実行する `Unity_RunCommand`、コンソールの取得、画面の撮影などができる |
+| アセット生成（確定） | **Unity AI のアセット生成は使わない**。M2〜M5 は仮の素材で作り、本番の素材は別に用意する（T-11） |
 | ビルド先（確定） | WebGL（unityroom）。WebGL モジュールはインストール済み |
 | 将来のビルド先 | Windows（Steam）。Windows モジュールはインストール済み |
 | UI（確定） | **uGUI**（Canvas）＋ TextMeshPro |
@@ -214,7 +215,7 @@ Unity 標準のもの（`Library/` `Temp/` `Obj/` `Logs/` `UserSettings/` `Build
 |---|---|
 | Unity エディタ | Window → General → Test Runner → EditMode → Run All |
 | バッチモード | `bash tools/run_editmode_tests.sh`（エディタでプロジェクトを開いていないとき）。結果は `TestResults-EditMode.xml` |
-| MCP 経由（予定） | Unity を MCP でつないだら、そこから Test Runner を動かす |
+| MCP 経由 | `Unity_RunCommand` で `TestRunnerApi` を使って EditMode テストを動かす。テストは非同期で終わるので、結果を `SessionState` に入れておき、もう一度 `Unity_RunCommand` を呼んで読み出す。`RunCommand` の中でファイルを読み書きすると「ユーザーの操作が必要」として拒否されるので、ファイルには書かない |
 
 ---
 
@@ -222,30 +223,22 @@ Unity 標準のもの（`Library/` `Temp/` `Obj/` `Logs/` `UserSettings/` `Build
 
 | 項目 | メモ |
 |---|---|
-| Unity を MCP でつなぐ方法 | 使う MCP サーバーとつなぎ方は未定 |
-| コミットに使う名前・メールアドレス | Git の user.name / user.email が未設定。公開リポジトリなので GitHub の noreply アドレスがおすすめ（7.2） |
-| GitHub のリポジトリ | まだ作っていない |
+| コミットに使うメールアドレス | 最初のコミットは gmail のアドレスで行った。今後 GitHub の noreply アドレスに変えるかは未定（7.2） |
 
 ---
 
 ## 11. 進み具合
 
-### M1（2026-10-24 時点）
+### M1（2026-10-24 完了）
 
 | 項目 | 状態 |
 |---|---|
-| Unity プロジェクト作成 | △ テンプレートのファイルは置けた。バッチモードでの作成はライセンス未認証で途中終了（Unity でまだ一度も開いていない） |
+| Unity プロジェクト作成 | ✓ Unity 6000.5.6f1 で開いた。`.meta` と `Packages/packages-lock.json` ができた |
 | フォルダ・アセンブリ定義 | ✓ 2 章のとおり。asmdef 4 つ |
 | Core のクラス | ✓ `TimeConfig`、`GameClock`、`IRandom` / `SeededRandom` |
-| Core のテスト | △ EditMode テスト 11 件を書いた。Unity ではまだ動かしていない。Core を dotnet（C# 9）でビルドしてエラー 0、テストと同じ中身を簡単なプログラムで動かして合格 |
-| Git | △ `git init`（main）、`.gitignore`、`.gitattributes` まで。コミットはまだ |
-
-M1 を終えるのに残っていること:
-
-1. Unity でプロジェクトを開く（MCP でつなぐ準備を含む）。新しく足したファイルの `.meta` と `Packages/packages-lock.json` ができる
-2. EditMode テストを Unity で動かして全件成功を確かめる
-3. コミットに使う名前・メールアドレスを決めて、最初のコミット
-4. GitHub に公開リポジトリを作って push
+| Core のテスト | ✓ EditMode テスト 11 件を Unity で動かし、全件成功（MCP 経由、9 章） |
+| MCP | ✓ Unity AI Assistant の MCP サーバーでつないだ（1 章） |
+| Git | ✓ 最初のコミットを行い、GitHub の公開リポジトリ（take0708/Adventurer-shop-sim）に push した |
 
 ---
 
@@ -256,3 +249,4 @@ M1 を終えるのに残っていること:
 | 0.1 | 2026-10-22 | 初版 |
 | 0.2 | 2026-10-24 | M1 の実態に合わせて更新（テンプレート、パッケージ、asmdef の置き場所、実装済みクラス）。基本設計への参照を追加。9〜11 章（テストの実行、決まっていないこと、進み具合）を追加 |
 | 0.3 | 2026-10-24 | 2 章のフォルダ構成を変更（Unity プロジェクトのルート＝リポジトリのルート、AdventurerShop/ を廃止） |
+| 0.4 | 2026-10-24 | M1 完了。MCP の接続方法、Unity AI のアセット生成を使わないこと、MCP 経由のテストの動かし方を追記 |

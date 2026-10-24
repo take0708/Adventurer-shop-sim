@@ -76,7 +76,7 @@ Core のテスト（Unity でプロジェクトを開いていないとき）:
 bash tools/run_editmode_tests.sh
 ```
 
-Unity エディタからは Window → General → Test Runner → EditMode → Run All。Unity の操作は MCP でつないで行う予定（[kousei.md 10 章](kousei.md#10-決まっていないこと)）。
+Unity エディタからは Window → General → Test Runner → EditMode → Run All。Unity の操作は MCP でつないで行う（[kousei.md 1 章](kousei.md#1-開発環境)、MCP 経由のテストの動かし方は [9 章](kousei.md#9-テストの実行)）。
 
 ## 素材・ライセンス
 
