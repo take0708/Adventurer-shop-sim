@@ -5,22 +5,50 @@ namespace Shop.Core
 {
     /// <summary>
     /// Core の窓口（shousaisekkei.md 4 章）。Tick で進め、コマンドで操作し、DrainEvents でイベントを受け取る。
-    /// M2 では時間と配置のコマンドだけ。客・棚・会計・仕入れ・月末は M3 以降で足す。
+    /// M3 まで: 時間、配置、棚、客と会計。仕入れ・月末の集計は M4、評判は M5、行商人は M6 で足す。
     /// </summary>
     public sealed class GameSession
     {
         readonly PlacementValidator _validator;
+        readonly CustomerSpawner _spawner;
+        readonly CustomerFactory _factory;
+        readonly List<Shelf> _shelves = new List<Shelf>();
+        readonly List<Counter> _counters = new List<Counter>();
+        readonly List<Customer> _customers = new List<Customer>();
         List<GameEvent> _events = new List<GameEvent>();
         List<GameEvent> _drained = new List<GameEvent>();
+        int _nextCustomerId = 1;
 
         public GameConfig Config { get; }
         public GameClock Clock { get; }
         public ShopState State { get; }
+        public Warehouse Warehouse { get; }
         public ShopLayout Layout { get; }
+        /// <summary>FixtureId の小さい順。</summary>
+        public IReadOnlyList<Shelf> Shelves => _shelves;
+        public IReadOnlyList<Counter> Counters => _counters;
+        /// <summary>店内にいる客。CustomerId の小さい順。</summary>
+        public IReadOnlyList<Customer> Customers => _customers;
         public bool IsEnded => Clock.IsFinished;
+        /// <summary>今月の来店予定の人数。</summary>
+        public int PlannedVisits => _spawner.PlannedCount;
 
-        /// <summary>乱数。M3 以降で客や行商人が使う（shousaisekkei.md 1.3）。</summary>
+        /// <summary>今の星で問屋が売る品。</summary>
+        public IReadOnlyList<ItemDef> UnlockedItems
+        {
+            get
+            {
+                var list = new List<ItemDef>();
+                foreach (var i in Config.Items) if (!i.IsRare && i.UnlockStar <= State.Star) list.Add(i);
+                return list;
+            }
+        }
+
         internal IRandom Random { get; }
+        internal GridPathfinder Pathfinder { get; }
+        internal CustomerBrain Brain { get; }
+        /// <summary>今の ElapsedTicks。イベントの時刻に使う。</summary>
+        internal int Now => Clock.ElapsedTicks;
 
         public GameSession(GameConfig config, ulong seed)
         {
@@ -28,21 +56,48 @@ namespace Shop.Core
             Random = new SeededRandom(seed);
             Clock = new GameClock(config.Time);
             State = new ShopState(config.Balance.StartMoney, config.Balance.FreeShelfCount);
+            Warehouse = new Warehouse(config, this);
             Layout = new ShopLayout(config);
+            Pathfinder = new GridPathfinder(Layout);
             _validator = new PlacementValidator(config, Layout, State);
+            Brain = new CustomerBrain(this);
+            _spawner = new CustomerSpawner(config, Random);
+            _factory = new CustomerFactory(config, Random);
 
             // 初期配置は無料で置く。無料枠は減らさない（shousaisekkei.md 4.2）
-            foreach (var (def, origin) in config.Balance.InitialLayout) Layout.Add(def, origin, 0);
+            foreach (var (def, origin) in config.Balance.InitialLayout) AddFixtureObjects(Layout.Add(def, origin, 0));
 
-            Emit(new SessionStartedEvent(Clock.ElapsedTicks));
+            // 1 か月目の準備
+            _spawner.PlanMonth(State.Star, Layout.Ambience);
+
+            Emit(new SessionStartedEvent(Now));
         }
 
-        /// <summary>1 Tick 進める。終了後は何もしない（shousaisekkei.md 4.3）。</summary>
+        /// <summary>1 Tick 進める。終了後は何もしない（shousaisekkei.md 4.3、K-01）。</summary>
         public void Tick()
         {
             if (IsEnded) return;
+            int t = Clock.TickInMonth;
+
+            int due = _spawner.Due(t);
+            for (int i = 0; i < due; i++)
+            {
+                var (job, wants, budget) = _factory.Create(State.Star, _shelves);
+                SpawnCustomer(job, wants, budget);
+            }
+
+            for (int i = 0; i < _customers.Count; i++) Brain.Tick(_customers[i]);
+            for (int i = 0; i < _counters.Count; i++) _counters[i].Tick();
+            for (int i = 0; i < _shelves.Count; i++) _shelves[i].Tick();
+            _customers.RemoveAll(c => c.State == CustomerState.Gone);
+
             var clockEvents = Clock.Advance();
-            if ((clockEvents & ClockEvents.DayChanged) != 0) Emit(new DayChangedEvent(Clock.ElapsedTicks, Clock.Day, Clock.Month));
+            if ((clockEvents & ClockEvents.DayChanged) != 0) Emit(new DayChangedEvent(Now, Clock.Day, Clock.Month));
+            if ((clockEvents & ClockEvents.MonthEnded) != 0 && !IsEnded)
+            {
+                // 翌月の準備（月末の集計は M4 で足す）
+                _spawner.PlanMonth(State.Star, Layout.Ambience);
+            }
         }
 
         /// <summary>ためたイベントを返して空にする。返したリストは次の DrainEvents まで有効。</summary>
@@ -53,6 +108,18 @@ namespace Shop.Core
             _events = tmp;
             _events.Clear();
             return _drained;
+        }
+
+        public Shelf ShelfById(int fixtureId)
+        {
+            foreach (var s in _shelves) if (s.FixtureId == fixtureId) return s;
+            return null;
+        }
+
+        public Counter CounterById(int fixtureId)
+        {
+            foreach (var c in _counters) if (c.FixtureId == fixtureId) return c;
+            return null;
         }
 
         // ---- 確かめるだけ（配置モードの赤・緑表示用。状態は変えない） ----
@@ -92,7 +159,7 @@ namespace Shop.Core
         /// <summary>次の段階に広げる費用。最大の段階なら 0。</summary>
         public int NextExpansionCost => Layout.Stage < Config.MaxStage ? Config.SizeOf(Layout.Stage + 1).Cost : 0;
 
-        // ---- コマンド（shousaisekkei.md 6.4、10.2） ----
+        // ---- コマンド（shousaisekkei.md 6.4、7.1、10.2） ----
 
         public CommandResult PlaceFixture(FixtureDef def, Tile origin)
         {
@@ -103,7 +170,8 @@ namespace Shop.Core
             if (cost == 0 && def.Kind == FixtureKind.Shelf && def.UsesFreeShelf && def.Cost > 0) State.UseFreeShelf();
             if (cost > 0) Pay(-cost, MoneyReason.Equipment);
 
-            Layout.Add(def, origin, cost);
+            var f = Layout.Add(def, origin, cost);
+            AddFixtureObjects(f);
             OnLayoutChanged();
             return CommandResult.Success;
         }
@@ -125,9 +193,29 @@ namespace Shop.Core
             var r = CanRemove(fixtureId);
             if (!r.Ok) return r;
 
-            int refund = RefundOf(fixtureId);
+            var f = Layout.FindById(fixtureId);
+            var shelf = ShelfById(fixtureId);
+            if (shelf != null)
+            {
+                shelf.ReturnAllToWarehouse();
+                _shelves.Remove(shelf);
+            }
+            var counter = CounterById(fixtureId);
+            if (counter != null)
+            {
+                var waiting = counter.TakeAll();
+                _counters.Remove(counter);
+                Layout.Remove(f);
+                foreach (var c in _counters) c.RebuildQueueTiles();
+                foreach (var c in waiting) Brain.Reassign(c, counter);
+            }
+            else
+            {
+                Layout.Remove(f);
+            }
+
+            int refund = f.PaidCost * Config.Balance.RefundPercent / 100;
             if (refund > 0) Pay(refund, MoneyReason.Refund);
-            Layout.Remove(Layout.FindById(fixtureId));
             OnLayoutChanged();
             return CommandResult.Success;
         }
@@ -141,23 +229,88 @@ namespace Shop.Core
 
             if (cost > 0) Pay(-cost, MoneyReason.Expansion);
             Layout.Expand();
-            Emit(new ShopExpandedEvent(Clock.ElapsedTicks, Layout.Stage));
+            Emit(new ShopExpandedEvent(Now, Layout.Stage));
             OnLayoutChanged();
             return CommandResult.Success;
+        }
+
+        /// <summary>棚に並べる商品を決める。null で何も置かない。</summary>
+        public CommandResult AssignShelf(int fixtureId, ItemDef itemOrNull)
+        {
+            if (IsEnded) return CommandResult.Fail(FailReason.GameOver);
+            var shelf = ShelfById(fixtureId);
+            if (shelf == null) return CommandResult.Fail(FailReason.NotFound);
+            return shelf.Assign(itemOrNull);
+        }
+
+        /// <summary>
+        /// デバッグ用: 倉庫に品を直接入れる（問屋のない M3 で遊ぶため。shousaisekkei.md 14 章）。
+        /// 問屋（M4）ができたら UI からは呼ばない。
+        /// </summary>
+        public void DebugAddStock(ItemDef item, int count)
+        {
+            if (count > 0) Warehouse.Add(item, count);
+        }
+
+        // ---- 内部 ----
+
+        void AddFixtureObjects(PlacedFixture f)
+        {
+            if (f.Def.Kind == FixtureKind.Shelf) InsertById(_shelves, new Shelf(this, f), s => s.FixtureId);
+            else if (f.Def.Kind == FixtureKind.Counter) InsertById(_counters, new Counter(this, f), c => c.FixtureId);
+        }
+
+        static void InsertById<T>(List<T> list, T item, Func<T, int> id)
+        {
+            int i = list.Count;
+            while (i > 0 && id(list[i - 1]) > id(item)) i--;
+            list.Insert(i, item);
+        }
+
+        /// <summary>客を入口に出す。テストでは中身を決めて直接呼ぶ。</summary>
+        internal Customer SpawnCustomer(JobDef job, List<Want> wants, int budget)
+        {
+            var c = new Customer(_nextCustomerId++, job, wants, budget, Layout.Entrance);
+            c.StateTimer = Config.Balance.WalkTicksPerTile;
+            _customers.Add(c);
+            Emit(new CustomerSpawnedEvent(Now, c.Id, job, c.Tile));
+            return c;
+        }
+
+        /// <summary>今月の残りの来店予定を消す（テスト用）。</summary>
+        internal void ClearSpawnPlan() => _spawner.Clear();
+
+        internal CustomerFactory Factory => _factory;
+        internal CustomerSpawner Spawner => _spawner;
+
+        /// <summary>Counter から呼ばれる。売上を足して、客の結果を決める（shousaisekkei.md 7.2）。</summary>
+        internal void Checkout(Counter counter, Customer c)
+        {
+            int amount = 0;
+            foreach (var (item, _) in c.Basket) amount += item.SellPrice;
+            if (amount > 0)
+            {
+                State.AddSales(amount);
+                Emit(new MoneyChangedEvent(Now, amount, MoneyReason.Sale, State.Money));
+            }
+            Emit(new CheckoutDoneEvent(Now, counter.FixtureId, c.Id, amount));
+            Brain.OnCheckedOut(c);
         }
 
         void Pay(int delta, MoneyReason reason)
         {
             State.AddMoney(delta);
-            Emit(new MoneyChangedEvent(Clock.ElapsedTicks, delta, reason, State.Money));
+            Emit(new MoneyChangedEvent(Now, delta, reason, State.Money));
         }
 
-        /// <summary>配置が変わったとき（shousaisekkei.md 6.5）。客・行列の直しは M3 で足す。</summary>
+        /// <summary>配置が変わったとき（shousaisekkei.md 6.5）。行列のマスを作り直し、客をどかして経路を引き直す。</summary>
         void OnLayoutChanged()
         {
-            Emit(new LayoutChangedEvent(Clock.ElapsedTicks));
+            foreach (var c in _counters) c.RebuildQueueTiles();
+            foreach (var c in _customers) Brain.OnLayoutChanged(c);
+            Emit(new LayoutChangedEvent(Now));
         }
 
-        void Emit(GameEvent e) => _events.Add(e);
+        internal void Emit(GameEvent e) => _events.Add(e);
     }
 }

@@ -2,7 +2,7 @@
 
 | 項目 | 内容 |
 |---|---|
-| 版 | 0.5 |
+| 版 | 0.6 |
 | 作成日 | 2026-10-22 |
 | 更新日 | 2026-10-24 |
 | 対象 | [youken.md](youken.md) の T-09。ゲームの動きの設計は [kihonsekkei.md](kihonsekkei.md) |
@@ -223,6 +223,8 @@ MCP で Play して確かめるときの注意:
 - エディタが裏にあるとフレームが進まない。`EditorApplication.isPaused = true` → `EditorApplication.Step()` で 1 フレームずつ進める
 - `Unity_Camera_Capture` にカメラの ID を渡すと失敗する。ID なし（Scene ビューの撮影）なら撮れる。IMGUI（OnGUI）のパネルは写らない
 - `RunCommand` では `using System.Reflection` が使えない（許可されていない名前空間）
+- `Step()` は、`Session.Tick()` などを回すのと同じ `RunCommand` の中で呼ばない（PlayerLoop の再帰のエラーが出る）。別の呼び出しにする
+- Play 中にスクリプトを変えると再コンパイルで `GameSession` が消える。Play を止めてから入り直す
 
 ---
 
@@ -267,6 +269,25 @@ MCP で Play して確かめるときの注意:
 - 配置モードのパネルは仮に IMGUI（OnGUI）。uGUI の画面は M4（`BottomMenu` など）で作り、そのときに置き換える
 - エディタ拡張のために `Shop.Editor` アセンブリを足した（3.2）
 
+### M3 客と販売（2026-10-26 時点）
+
+| 項目 | 状態 |
+|---|---|
+| Core | ✓ `Warehouse`、`Shelf`（陳列・補充・戻す）、`Counter`（行列のマス・会計 24 Tick・K-02）、`Customer`、`CustomerFactory`、`CustomerSpawner`、`CustomerBrain`（棚へ・手に取る・しょんぼり・うろうろ・行列・待ちきれない・最長滞在 K-03・向かい直し K-06）、`WeightedPicker`、`AssignShelf`、配置替えのときの客の扱い（6.5）、`ShopState` に売上と星（★1 固定）、客・棚・会計のイベント |
+| Game | ✓ `ShelfView`（並ぶ数を商品の色の四角で）、`CustomerView`（職業の色、移動の補間、頭の上の気持ちの色）、`CounterView`（会計のバー）、`FloatingText`（「+100G」）、`Hud`（日付・所持金・売上・客の数・⏸ ▶ ▶▶）。配置モードに棚の商品設定と「デバッグ: 倉庫に各 +10」 |
+| テスト | ✓ 78 件すべて成功（UT-SHF-01〜06、UT-CUS-01〜05、UT-BHV-01〜07、UT-CNT-01〜04、UT-LAY-09 ほか） |
+| 画面 | △ Play で棚を置いて商品を並べ、時間を進めると、客が来て買い物・会計し、売上が増えるのを確かめた。**マウスでの商品設定と、実時間で客が歩く見た目は、まだ手で確かめていない** |
+
+詳細設計からの変更・先送り:
+
+- 評判の増減（UT-BHV の「評判 +2」など）は M5 の `ReputationSystem` で足す。M3 では結果（Full / Partial / None / QueueLeft）までを確かめている
+- 月末の集計はまだない。月が変わると来店予定だけ作り直す（M4 で月末処理にする）
+- 掘り出し物（特売台の限定品を欲しがる）の仕組みは入れたが、テスト（UT-CUS-06、UT-BHV-08）は行商人と合わせて M6 で書く
+- 雰囲気値の来店数への効果（UT-CUS-04）は計算だけ先に入れてテストした
+- 棚の商品設定は配置モードの中だけ（時間が止まっている）。時間を止めない `ShelfAssignPanel` は M4
+- 倉庫への品の入れ方は、問屋（M4）ができるまで `GameSession.DebugAddStock` と配置モードのデバッグボタン
+- 浮き文字と HUD は仮に IMGUI。TextMeshPro のフォントを用意するときに置き換える
+
 ---
 
 ## 変更履歴
@@ -278,3 +299,4 @@ MCP で Play して確かめるときの注意:
 | 0.3 | 2026-10-24 | 2 章のフォルダ構成を変更（Unity プロジェクトのルート＝リポジトリのルート、AdventurerShop/ を廃止） |
 | 0.4 | 2026-10-24 | M1 完了。MCP の接続方法、Unity AI のアセット生成を使わないこと、MCP 経由のテストの動かし方を追記 |
 | 0.5 | 2026-10-24 | M2 の進み具合と詳細設計からの変更を追記。3.2 に `Shop.Editor` を足し、テストの参照に `Shop.Data` を足した（K-09）。9 章に MCP で Play するときの注意 |
+| 0.6 | 2026-10-26 | M2 完了。M3 の進み具合と詳細設計からの変更を追記。9 章に MCP で Play するときの注意を足した |

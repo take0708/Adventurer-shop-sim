@@ -17,6 +17,10 @@ namespace Shop.Tests.EditMode
             public int StartMoney = 500;
             public Tile Entrance = new Tile(2, 0);
             public int MerchantArriveMaxTick = 400;
+            public int QueuePatienceTicks = 120;
+            public int MaxCustomerStayTicks = 400;
+            /// <summary>true なら来店数を 0 にする（客をテストで直接出すとき）。</summary>
+            public bool NoVisitors;
             public List<ItemDef> Items = new List<ItemDef>();
             public List<JobDef> Jobs = new List<JobDef>();
             public List<StarDef> Stars = new List<StarDef>();
@@ -34,12 +38,15 @@ namespace Shop.Tests.EditMode
                     repFull: 2, repPartial: 0, repNone: -2, repQueueLeft: -1,
                     ambiencePermille: 15, ambienceMax: 20,
                     twoWantsChancePercent: 40,
-                    checkoutTicks: 24, queuePatienceTicks: 120, walkTicksPerTile: 3, pickTicks: 5, emoteTicks: 10,
-                    maxCustomerStayTicks: 400, spawnWindowEndTick: 570,
+                    checkoutTicks: 24, queuePatienceTicks: QueuePatienceTicks, walkTicksPerTile: 3, pickTicks: 5, emoteTicks: 10,
+                    maxCustomerStayTicks: MaxCustomerStayTicks, spawnWindowEndTick: 570,
                     merchantArriveMinTick: 60, merchantArriveMaxTick: MerchantArriveMaxTick, merchantStayTicks: 150, merchantMaxBuy: 2,
                     refundPercent: 100, freeShelfCount: 3,
                     entrance: Entrance, initialLayout: InitialLayout);
-                return new GameConfig(Time, balance, Items, Jobs, Stars, Fixtures, Sizes);
+                var stars = Stars;
+                if (NoVisitors)
+                    stars = Stars.ConvertAll(x => new StarDef(x.Star, x.RequiredRep, 0, x.BudgetMin, x.BudgetMax, x.MerchantChancePercent));
+                return new GameConfig(Time, balance, Items, Jobs, stars, Fixtures, Sizes);
             }
         }
 

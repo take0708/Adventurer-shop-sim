@@ -45,6 +45,7 @@ namespace Shop.Game
         public void SetSpeed(int speed) => Speed = Mathf.Clamp(speed, 1, 2);
         public void Pause(PauseReason r) => _pauseReasons |= r;
         public void Resume(PauseReason r) => _pauseReasons &= ~r;
+        public bool IsPausedBy(PauseReason r) => (_pauseReasons & r) != 0;
 
         void Update()
         {

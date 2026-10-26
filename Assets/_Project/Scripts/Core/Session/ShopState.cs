@@ -4,11 +4,15 @@ namespace Shop.Core
 {
     /// <summary>
     /// 店の状態（shousaisekkei.md 5.1）。
-    /// M2 ではお金と無料枠だけ。評判・星・売上は M3〜M5 で足す。
+    /// M3 まではお金・売上・無料枠。星は ★1 のまま（評判と星は M5 で足す）。
     /// </summary>
     public sealed class ShopState
     {
         public int Money { get; private set; }
+        /// <summary>総売上（スコア）。払い戻しは含まない。</summary>
+        public int TotalSales { get; private set; }
+        /// <summary>到達した最高の星（下がらない）。</summary>
+        public int Star { get; private set; } = 1;
         public int FreeShelvesLeft { get; private set; }
 
         internal ShopState(int money, int freeShelves)
@@ -24,6 +28,14 @@ namespace Shop.Core
             if (next < 0) throw new InvalidOperationException($"所持金が負になる（{Money} + {delta}）");
             if (next > int.MaxValue) throw new OverflowException("所持金があふれる");
             Money = (int)next;
+        }
+
+        /// <summary>Money と TotalSales の両方に足す。</summary>
+        internal void AddSales(int amount)
+        {
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            AddMoney(amount);
+            TotalSales += amount;
         }
 
         internal void UseFreeShelf()

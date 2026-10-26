@@ -62,4 +62,158 @@ namespace Shop.Core
             Stage = stage;
         }
     }
+
+    public sealed class WarehouseChangedEvent : GameEvent
+    {
+        public ItemDef Item { get; }
+        /// <summary>変わったあとの数。</summary>
+        public int Count { get; }
+
+        public WarehouseChangedEvent(int tick, ItemDef item, int count) : base(tick)
+        {
+            Item = item;
+            Count = count;
+        }
+    }
+
+    // ---- 棚・会計 ----
+
+    public sealed class ShelfChangedEvent : GameEvent
+    {
+        public int FixtureId { get; }
+        /// <summary>null = 何も置かない。</summary>
+        public ItemDef Item { get; }
+        public int Displayed { get; }
+
+        public ShelfChangedEvent(int tick, int fixtureId, ItemDef item, int displayed) : base(tick)
+        {
+            FixtureId = fixtureId;
+            Item = item;
+            Displayed = displayed;
+        }
+    }
+
+    public sealed class ShelfEmptiedEvent : GameEvent
+    {
+        public int FixtureId { get; }
+
+        public ShelfEmptiedEvent(int tick, int fixtureId) : base(tick)
+        {
+            FixtureId = fixtureId;
+        }
+    }
+
+    public sealed class ItemTakenEvent : GameEvent
+    {
+        public int FixtureId { get; }
+        public int CustomerId { get; }
+        public ItemDef Item { get; }
+
+        public ItemTakenEvent(int tick, int fixtureId, int customerId, ItemDef item) : base(tick)
+        {
+            FixtureId = fixtureId;
+            CustomerId = customerId;
+            Item = item;
+        }
+    }
+
+    public sealed class QueueChangedEvent : GameEvent
+    {
+        public int FixtureId { get; }
+        /// <summary>並んでいる人数 ＋ 会計中。</summary>
+        public int Load { get; }
+
+        public QueueChangedEvent(int tick, int fixtureId, int load) : base(tick)
+        {
+            FixtureId = fixtureId;
+            Load = load;
+        }
+    }
+
+    public sealed class CheckoutDoneEvent : GameEvent
+    {
+        public int FixtureId { get; }
+        public int CustomerId { get; }
+        public int Amount { get; }
+
+        public CheckoutDoneEvent(int tick, int fixtureId, int customerId, int amount) : base(tick)
+        {
+            FixtureId = fixtureId;
+            CustomerId = customerId;
+            Amount = amount;
+        }
+    }
+
+    // ---- 客 ----
+
+    public enum EmoteKind { OutOfStock, TooExpensive, NotCarried, Picked, Treasure }
+
+    public sealed class CustomerSpawnedEvent : GameEvent
+    {
+        public int CustomerId { get; }
+        public JobDef Job { get; }
+        public Tile Tile { get; }
+
+        public CustomerSpawnedEvent(int tick, int customerId, JobDef job, Tile tile) : base(tick)
+        {
+            CustomerId = customerId;
+            Job = job;
+            Tile = tile;
+        }
+    }
+
+    /// <summary>From から To へ Ticks かけて歩く。Ticks = 0 はその場で移す（配置替えでどかしたとき）。</summary>
+    public sealed class CustomerMovedEvent : GameEvent
+    {
+        public int CustomerId { get; }
+        public Tile From { get; }
+        public Tile To { get; }
+        public int Ticks { get; }
+
+        public CustomerMovedEvent(int tick, int customerId, Tile from, Tile to, int ticks) : base(tick)
+        {
+            CustomerId = customerId;
+            From = from;
+            To = to;
+            Ticks = ticks;
+        }
+    }
+
+    public sealed class CustomerEmoteEvent : GameEvent
+    {
+        public int CustomerId { get; }
+        public EmoteKind Kind { get; }
+
+        public CustomerEmoteEvent(int tick, int customerId, EmoteKind kind) : base(tick)
+        {
+            CustomerId = customerId;
+            Kind = kind;
+        }
+    }
+
+    /// <summary>結果が決まって、店を出ることになった（出口へ歩き始める）。</summary>
+    public sealed class CustomerLeftEvent : GameEvent
+    {
+        public int CustomerId { get; }
+        public CustomerResult Result { get; }
+        public ItemDef[] Bought { get; }
+
+        public CustomerLeftEvent(int tick, int customerId, CustomerResult result, ItemDef[] bought) : base(tick)
+        {
+            CustomerId = customerId;
+            Result = result;
+            Bought = bought;
+        }
+    }
+
+    /// <summary>出口に着いて消えた。</summary>
+    public sealed class CustomerExitedEvent : GameEvent
+    {
+        public int CustomerId { get; }
+
+        public CustomerExitedEvent(int tick, int customerId) : base(tick)
+        {
+            CustomerId = customerId;
+        }
+    }
 }

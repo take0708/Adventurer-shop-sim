@@ -38,16 +38,29 @@ namespace Shop.Editor
 
             var grid = new GameObject("Grid").AddComponent<GridView>();
             var fixtures = new GameObject("Fixtures").AddComponent<FixtureView>();
+            var shelves = new GameObject("Shelves").AddComponent<ShelfView>();
+            var counters = new GameObject("Counters").AddComponent<CounterView>();
+            var customers = new GameObject("Customers").AddComponent<CustomerView>();
+            var floating = new GameObject("FloatingText").AddComponent<FloatingText>();
             var placement = new GameObject("PlacementMode").AddComponent<PlacementMode>();
+            var hud = new GameObject("Hud").AddComponent<Hud>();
 
             Set(runner, "_database", db);
             Set(runner, "_router", router);
             Set(grid, "_runner", runner);
             Set(grid, "_camera", cam);
             Set(fixtures, "_runner", runner);
+            Set(shelves, "_runner", runner);
+            Set(counters, "_runner", runner);
+            Set(customers, "_runner", runner);
+            Set(floating, "_runner", runner);
+            Set(floating, "_camera", cam);
             Set(placement, "_runner", runner);
             Set(placement, "_camera", cam);
-            SetList(router, "_handlers", new List<Object> { grid, fixtures, placement });
+            Set(hud, "_runner", runner);
+            Set(hud, "_placement", placement);
+            // 描き直しの順: 床 → 配置物 → 棚の中身 → カウンター → 客 → 文字 → 配置モード
+            SetList(router, "_handlers", new List<Object> { grid, fixtures, shelves, counters, customers, floating, placement });
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings(ScenePath);
