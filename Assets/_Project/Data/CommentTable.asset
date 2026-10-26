@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b07e18dd384d2c3409c81d0d4d9f7749, type: 3}
+  m_Name: CommentTable
+  m_EditorClassIdentifier: Shop.Game::Shop.Game.CommentTable
+  _entries:
+  - result: 0
+    lines:
+    - "\u3044\u3044{item}\u304C\u8CB7\u3048\u305F\uFF01"
+    - "\u307E\u305F\u6765\u308B\u3088\uFF01"
+  - result: 1
+    lines:
+    - "\u307E\u3042\u307E\u3042\u304B\u306A"
+    - "{item}\u306F\u8CB7\u3048\u305F\u3051\u3069\u2026"
+  - result: 2
+    lines:
+    - "\u54C1\u63C3\u3048\u304C\u30A4\u30DE\u30A4\u30C1\u2026"
+    - "\u6B32\u3057\u3044\u3082\u306E\u304C\u306A\u304B\u3063\u305F\u2026"
+  - result: 3
+    lines:
+    - "\u5F85\u3061\u304F\u305F\u3073\u308C\u305F\u2026"
+  _treasureLines:
+  - "\u3059\u3054\u3044\u54C1\u3092\u898B\u3064\u3051\u305F\uFF01"
+  - "{item}\u304C\u624B\u306B\u5165\u308B\u306A\u3093\u3066\uFF01"

@@ -42,7 +42,7 @@ namespace Shop.Game
         void OnGUI()
         {
             if (!IsOpen || Session == null) return;
-            var rect = new Rect(Screen.width - Width - 8, 80, Width, Screen.height - 160);
+            var rect = new Rect(Screen.width - Width - 8, 104, Width, Screen.height - 170);
             ImGuiBlocker.Register(rect);
             GUILayout.BeginArea(rect, GUI.skin.box);
             GUILayout.Label("仕入れ（問屋）");

@@ -31,6 +31,38 @@ namespace Shop.Core
         public SessionStartedEvent(int tick) : base(tick) { }
     }
 
+    /// <summary>月末の判定で星が上がった。UI は月末収支の OK のあとに演出を出す。</summary>
+    public sealed class StarRaisedEvent : GameEvent
+    {
+        public int NewStar { get; }
+        /// <summary>間の星も含めて、解禁された問屋の品。</summary>
+        public ItemDef[] Unlocked { get; }
+
+        public StarRaisedEvent(int tick, int newStar, ItemDef[] unlocked) : base(tick)
+        {
+            NewStar = newStar;
+            Unlocked = unlocked;
+        }
+    }
+
+    public sealed class ReputationChangedEvent : GameEvent
+    {
+        /// <summary>実際に変わった量（0 で止めたあと）。</summary>
+        public int Delta { get; }
+        public int Reputation { get; }
+        public CustomerResult Result { get; }
+        /// <summary>会計した限定品のボーナス（Delta に含まれる）。</summary>
+        public int RareBonus { get; }
+
+        public ReputationChangedEvent(int tick, int delta, int reputation, CustomerResult result, int rareBonus) : base(tick)
+        {
+            Delta = delta;
+            Reputation = reputation;
+            Result = result;
+            RareBonus = rareBonus;
+        }
+    }
+
     public sealed class DayChangedEvent : GameEvent
     {
         public int Day { get; }

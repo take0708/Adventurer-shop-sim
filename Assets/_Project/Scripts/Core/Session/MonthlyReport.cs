@@ -2,7 +2,6 @@ namespace Shop.Core
 {
     /// <summary>
     /// 月の集計（月末収支 SC-08、shousaisekkei.md 9.3）。起きたときに足していく（K-10）。
-    /// 評判と星の項目は M5 で入れる。それまでは 0 と ★1。
     /// </summary>
     public sealed class MonthlyReport
     {

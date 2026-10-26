@@ -352,7 +352,7 @@ namespace Shop.Core
             Decide(c, CustomerResult.QueueLeft);
         }
 
-        /// <summary>結果は店を出ることが決まった瞬間に 1 回だけ決める（shousaisekkei.md 8.5）。評判は M5 で足す。</summary>
+        /// <summary>結果は店を出ることが決まった瞬間に 1 回だけ決める（shousaisekkei.md 8.5）。評判もここで足す。</summary>
         void Decide(Customer c, CustomerResult result)
         {
             c.Result = result;

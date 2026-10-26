@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using Shop.Core;
 using Shop.Data;
+using Shop.Game;
 using UnityEditor;
 using UnityEngine;
 
@@ -94,8 +95,31 @@ namespace Shop.Editor
             db.EditorSet(items, rares, jobs, stars, fixtures, sizes, balance);
             EditorUtility.SetDirty(db);
 
+            CreateCommentTable();
+
             AssetDatabase.SaveAssets();
             Debug.Log($"Step 1 のデータを作りました: {GameDatabase.DefaultPath}");
+        }
+
+        /// <summary>
+        /// 客の吹き出しのセリフ。セリフ集（T-13）が決まるまでの仮。kihonsekkei.md 5.5 の例から。
+        /// 既にあるアセットは上書きしない（手で直したセリフを消さないため）。
+        /// </summary>
+        public static CommentTable CreateCommentTable()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<CommentTable>(CommentTable.DefaultPath);
+            if (existing != null) return existing;
+            var table = Load<CommentTable>(CommentTable.DefaultPath);
+            table.EditorSet(new List<CommentTable.Entry>
+            {
+                new CommentTable.Entry { result = CustomerResult.Full, lines = new List<string> { "いい{item}が買えた！", "また来るよ！" } },
+                new CommentTable.Entry { result = CustomerResult.Partial, lines = new List<string> { "まあまあかな", "{item}は買えたけど…" } },
+                new CommentTable.Entry { result = CustomerResult.None, lines = new List<string> { "品揃えがイマイチ…", "欲しいものがなかった…" } },
+                new CommentTable.Entry { result = CustomerResult.QueueLeft, lines = new List<string> { "待ちくたびれた…" } },
+            }, new List<string> { "すごい品を見つけた！", "{item}が手に入るなんて！" });
+            EditorUtility.SetDirty(table);
+            AssetDatabase.SaveAssets();
+            return table;
         }
 
         static T Load<T>(string path) where T : ScriptableObject

@@ -5,7 +5,7 @@ namespace Shop.Core
 {
     /// <summary>
     /// Core の窓口（shousaisekkei.md 4 章）。Tick で進め、コマンドで操作し、DrainEvents でイベントを受け取る。
-    /// M4 まで: 時間、配置、棚、客と会計、問屋、月末の集計。評判と星は M5、行商人は M6、年末と終了は M7 で足す。
+    /// M5 まで: 時間、配置、棚、客と会計、問屋、月末の集計、評判と星。行商人は M6、年末と終了は M7 で足す。
     /// </summary>
     public sealed class GameSession
     {
@@ -13,6 +13,7 @@ namespace Shop.Core
         readonly CustomerSpawner _spawner;
         readonly CustomerFactory _factory;
         readonly Wholesaler _wholesaler;
+        readonly ReputationSystem _reputation;
         readonly List<Shelf> _shelves = new List<Shelf>();
         readonly List<Counter> _counters = new List<Counter>();
         readonly List<Customer> _customers = new List<Customer>();
@@ -41,6 +42,9 @@ namespace Shop.Core
         /// </summary>
         public bool MonthEndedThisTick { get; private set; }
 
+        /// <summary>次の星までの残りの評判。最大の星なら 0。</summary>
+        public int RepToNextStar => _reputation.RepToNextStar(State.Reputation, State.Star);
+
         /// <summary>今の星で問屋が売る品。</summary>
         public IReadOnlyList<ItemDef> UnlockedItems => _wholesaler.Unlocked(State.Star);
 
@@ -55,7 +59,7 @@ namespace Shop.Core
             Config = config ?? throw new ArgumentNullException(nameof(config));
             Random = new SeededRandom(seed);
             Clock = new GameClock(config.Time);
-            State = new ShopState(config.Balance.StartMoney, config.Balance.FreeShelfCount);
+            State = new ShopState(config.Balance.StartMoney, config.Balance.FreeShelfCount, config.MaxStar);
             Warehouse = new Warehouse(config, this);
             Layout = new ShopLayout(config);
             Pathfinder = new GridPathfinder(Layout);
@@ -64,6 +68,7 @@ namespace Shop.Core
             _spawner = new CustomerSpawner(config, Random);
             _factory = new CustomerFactory(config, Random);
             _wholesaler = new Wholesaler(this);
+            _reputation = new ReputationSystem(this);
             CurrentReport = new MonthlyReport(1, 0);
 
             // 初期配置は無料で置く。無料枠は減らさない（shousaisekkei.md 4.2）
@@ -101,18 +106,21 @@ namespace Shop.Core
 
         /// <summary>
         /// 月末の処理（kihonsekkei.md 7.1、shousaisekkei.md 9.2）。店内に残っている客はそのまま翌月へ。
-        /// 星の判定は M5、年末と終了は M7 で足す。
+        /// 星は翌月から反映する（FR-REP-05）。年末と終了は M7 で足す。
         /// </summary>
         void EndMonth()
         {
             int month = Clock.ElapsedTicks / Config.Time.TicksPerMonth;
-            CurrentReport.Close(0, State.Star, 0);
+            bool raised = _reputation.TryRaiseStar(month + 1, out int newStar, out var unlocked);
+            // 集計の星は月末の判定のあと
+            CurrentReport.Close(State.Reputation, State.Star, RepToNextStar);
             Emit(new MonthEndedEvent(Now, CurrentReport));
+            if (raised) Emit(new StarRaisedEvent(Now, newStar, unlocked.ToArray()));
             MonthEndedThisTick = true;
             if (IsEnded) return;
 
             // 翌月の準備
-            CurrentReport = new MonthlyReport(month + 1, 0);
+            CurrentReport = new MonthlyReport(month + 1, State.Reputation);
             _spawner.PlanMonth(State.Star, Layout.Ambience);
         }
 
@@ -339,8 +347,12 @@ namespace Shop.Core
             Brain.OnCheckedOut(c);
         }
 
-        /// <summary>客の結果が決まった（shousaisekkei.md 8.5）。評判は M5 で足す。</summary>
-        internal void RecordResult(Customer c, CustomerResult result) => CurrentReport.AddResult(result);
+        /// <summary>客の結果が決まった（shousaisekkei.md 8.5）。評判を足して、今月の集計に数える。</summary>
+        internal void RecordResult(Customer c, CustomerResult result)
+        {
+            _reputation.Apply(c, result);
+            CurrentReport.AddResult(result);
+        }
 
         internal void Pay(int delta, MoneyReason reason)
         {

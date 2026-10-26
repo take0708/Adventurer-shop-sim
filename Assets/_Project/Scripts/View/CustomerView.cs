@@ -57,6 +57,18 @@ namespace Shop.Game
             }
         }
 
+        /// <summary>客の見た目の今の位置（吹き出しなどを出すため）。</summary>
+        public bool TryGetPosition(int customerId, out Vector3 position)
+        {
+            if (_views.TryGetValue(customerId, out var v))
+            {
+                position = v.Body.transform.position;
+                return true;
+            }
+            position = default;
+            return false;
+        }
+
         void Update()
         {
             if (_runner.Session == null) return;

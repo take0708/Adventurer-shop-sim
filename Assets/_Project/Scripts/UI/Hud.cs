@@ -19,13 +19,23 @@ namespace Shop.Game
             if (session == null) return;
             var clock = session.Clock;
 
-            var area = new Rect(Screen.width - Width - 8, 8, Width, 64);
+            var area = new Rect(Screen.width - Width - 8, 8, Width, 88);
             ImGuiBlocker.Register(area);
             GUILayout.BeginArea(area, GUI.skin.box);
             GUILayout.BeginHorizontal();
             GUILayout.Label($"{clock.Year} 年目 {clock.MonthOfYear} 月 {clock.Day} 日", GUILayout.Width(140));
             GUILayout.Label($"所持金 {session.State.Money}G", GUILayout.Width(120));
             GUILayout.Label($"売上 {session.State.TotalSales}G");
+            GUILayout.EndHorizontal();
+
+            // 星と評判（評判はその場で増える。星は月末に上がる）
+            var state = session.State;
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(new string('★', state.Star) + new string('☆', session.Config.MaxStar - state.Star), GUILayout.Width(90));
+            int next = session.RepToNextStar;
+            GUILayout.Label(next > 0
+                ? $"評判 {state.Reputation}（次の星まで {next}。月末に判定）"
+                : $"評判 {state.Reputation}（最高の星）");
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();

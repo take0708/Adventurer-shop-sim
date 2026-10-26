@@ -23,6 +23,7 @@ namespace Shop.Editor
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             // NewScene で読み込み済みのアセットが外れることがあるので、シーンを作ったあとで読む
             var db = AssetDatabase.LoadAssetAtPath<GameDatabase>(GameDatabase.DefaultPath);
+            var comments = Step1DataCreator.CreateCommentTable();
 
             var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = camGo.AddComponent<Camera>();
@@ -42,6 +43,7 @@ namespace Shop.Editor
             var counters = new GameObject("Counters").AddComponent<CounterView>();
             var customers = new GameObject("Customers").AddComponent<CustomerView>();
             var floating = new GameObject("FloatingText").AddComponent<FloatingText>();
+            var bubbles = new GameObject("CommentBubbles").AddComponent<CommentBubbles>();
             var placement = new GameObject("PlacementMode").AddComponent<PlacementMode>();
             var ui = new GameObject("UI");
             var hud = ui.AddComponent<Hud>();
@@ -60,6 +62,9 @@ namespace Shop.Editor
             Set(customers, "_runner", runner);
             Set(floating, "_runner", runner);
             Set(floating, "_camera", cam);
+            Set(bubbles, "_table", comments);
+            Set(bubbles, "_customers", customers);
+            Set(bubbles, "_camera", cam);
             Set(placement, "_runner", runner);
             Set(placement, "_camera", cam);
             Set(placement, "_wholesaler", wholesaler);
@@ -74,7 +79,7 @@ namespace Shop.Editor
             Set(shelfPanel, "_placement", placement);
             Set(modal, "_runner", runner);
             // 描き直しの順: 床 → 配置物 → 棚の中身 → カウンター → 客 → 文字 → 配置モード → パネル → 月末などのダイアログ
-            SetList(router, "_handlers", new List<Object> { grid, fixtures, shelves, counters, customers, floating, placement, wholesaler, shelfPanel, modal });
+            SetList(router, "_handlers", new List<Object> { grid, fixtures, shelves, counters, customers, floating, bubbles, placement, wholesaler, shelfPanel, modal });
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings(ScenePath);
