@@ -356,6 +356,7 @@ namespace Shop.Core
         void Decide(Customer c, CustomerResult result)
         {
             c.Result = result;
+            _s.RecordResult(c, result);
             var bought = new ItemDef[c.BasketList.Count];
             for (int i = 0; i < bought.Length; i++) bought[i] = c.BasketList[i].Item;
             _s.Emit(new CustomerLeftEvent(_s.Now, c.Id, result, bought));

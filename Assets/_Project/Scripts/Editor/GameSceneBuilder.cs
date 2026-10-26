@@ -43,7 +43,12 @@ namespace Shop.Editor
             var customers = new GameObject("Customers").AddComponent<CustomerView>();
             var floating = new GameObject("FloatingText").AddComponent<FloatingText>();
             var placement = new GameObject("PlacementMode").AddComponent<PlacementMode>();
-            var hud = new GameObject("Hud").AddComponent<Hud>();
+            var ui = new GameObject("UI");
+            var hud = ui.AddComponent<Hud>();
+            var menu = ui.AddComponent<BottomMenu>();
+            var wholesaler = ui.AddComponent<WholesalerPanel>();
+            var shelfPanel = ui.AddComponent<ShelfAssignPanel>();
+            var modal = ui.AddComponent<ModalQueue>();
 
             Set(runner, "_database", db);
             Set(runner, "_router", router);
@@ -58,9 +63,17 @@ namespace Shop.Editor
             Set(placement, "_runner", runner);
             Set(placement, "_camera", cam);
             Set(hud, "_runner", runner);
-            Set(hud, "_placement", placement);
-            // 描き直しの順: 床 → 配置物 → 棚の中身 → カウンター → 客 → 文字 → 配置モード
-            SetList(router, "_handlers", new List<Object> { grid, fixtures, shelves, counters, customers, floating, placement });
+            Set(menu, "_runner", runner);
+            Set(menu, "_placement", placement);
+            Set(menu, "_wholesaler", wholesaler);
+            Set(menu, "_modal", modal);
+            Set(wholesaler, "_runner", runner);
+            Set(shelfPanel, "_runner", runner);
+            Set(shelfPanel, "_camera", cam);
+            Set(shelfPanel, "_placement", placement);
+            Set(modal, "_runner", runner);
+            // 描き直しの順: 床 → 配置物 → 棚の中身 → カウンター → 客 → 文字 → 配置モード → パネル → 月末などのダイアログ
+            SetList(router, "_handlers", new List<Object> { grid, fixtures, shelves, counters, customers, floating, placement, wholesaler, shelfPanel, modal });
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings(ScenePath);

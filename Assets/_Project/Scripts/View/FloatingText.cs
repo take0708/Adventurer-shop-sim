@@ -6,7 +6,7 @@ namespace Shop.Game
 {
     /// <summary>
     /// 「+100G」などの浮き文字（shousaisekkei.md 11.3）。
-    /// M3 の仮: IMGUI で描く（TextMeshPro のフォントを用意したら置き換える）。
+    /// 仮の UI: IMGUI で描く。日本語フォントを決めたら uGUI ＋ TextMeshPro に置き換える（kousei.md 11 章）。
     /// </summary>
     public sealed class FloatingText : MonoBehaviour, IGameEventHandler
     {

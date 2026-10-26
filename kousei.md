@@ -2,7 +2,7 @@
 
 | 項目 | 内容 |
 |---|---|
-| 版 | 0.6 |
+| 版 | 0.7 |
 | 作成日 | 2026-10-22 |
 | 更新日 | 2026-10-24 |
 | 対象 | [youken.md](youken.md) の T-09。ゲームの動きの設計は [kihonsekkei.md](kihonsekkei.md) |
@@ -225,6 +225,7 @@ MCP で Play して確かめるときの注意:
 - `RunCommand` では `using System.Reflection` が使えない（許可されていない名前空間）
 - `Step()` は、`Session.Tick()` などを回すのと同じ `RunCommand` の中で呼ばない（PlayerLoop の再帰のエラーが出る）。別の呼び出しにする
 - Play 中にスクリプトを変えると再コンパイルで `GameSession` が消える。Play を止めてから入り直す
+- ステップ実行では経過時間がほぼ 0 なので、時間を進めて確かめるときは `GameRunner.Advance(秒)` を呼ぶ
 
 ---
 
@@ -288,6 +289,22 @@ MCP で Play して確かめるときの注意:
 - 倉庫への品の入れ方は、問屋（M4）ができるまで `GameSession.DebugAddStock` と配置モードのデバッグボタン
 - 浮き文字と HUD は仮に IMGUI。TextMeshPro のフォントを用意するときに置き換える
 
+### M4 仕入れと時間（2026-10-26 時点）
+
+| 項目 | 状態 |
+|---|---|
+| Core | ✓ `Wholesaler`（判定順は詳細設計 5.4）、`BuyFromWholesaler`、`MonthlyReport`（売上・仕入れ・設備投資・来店・結果の内訳・限定品の販売数）、月末処理（集計を締めて `MonthEnded` → 翌月の集計と来店予定）、`MonthEndedThisTick` |
+| Game | ✓ `GameRunner` が月末の Tick で止まる（`Advance(秒)` に切り出し）、`BottomMenu`（仕入れ / 配置）、`WholesalerPanel`（+1 / +5 / +10、合計、購入、未解禁はグレー）、`ShelfAssignPanel`（棚をクリックで開く。時間は止めない）、`ModalQueue` と `MonthlyReportDialog`（OK / Enter / Space で閉じて再開）、`ImGuiBlocker`（パネルの上のクリックを店内に通さない） |
+| テスト | ✓ 85 件すべて成功（UT-STK-01〜04、UT-END-01 ほか） |
+| 画面 | △ Play で、仕入れて棚に並べ、2 倍速で進めると 600 Tick ちょうどで止まり月末収支が出る（Modal で一時停止）ところまで確かめた。**パネルのマウス操作と月末収支の表示・閉じる操作は、まだ手で確かめていない** |
+
+詳細設計からの変更・先送り:
+
+- 星の判定・評判の項目（`RepBefore` / `RepAfter` / `RepToNextStar`）は M5。M4 の月末収支には出さない
+- 年末（`YearEnded`）と終了（`GameEnded`）は M7。24 か月目の月末も `MonthEnded` だけ出る
+- デバッグ用の「倉庫に各 +10」ボタンは、問屋ができたので外した（`DebugAddStock` はテストのために残す）
+- **画面は IMGUI の仮のままにした**。uGUI ＋ TextMeshPro は日本語フォントがないと文字が出ないため、フォント（T-10・M8）を決めてからまとめて置き換える
+
 ---
 
 ## 変更履歴
@@ -300,3 +317,4 @@ MCP で Play して確かめるときの注意:
 | 0.4 | 2026-10-24 | M1 完了。MCP の接続方法、Unity AI のアセット生成を使わないこと、MCP 経由のテストの動かし方を追記 |
 | 0.5 | 2026-10-24 | M2 の進み具合と詳細設計からの変更を追記。3.2 に `Shop.Editor` を足し、テストの参照に `Shop.Data` を足した（K-09）。9 章に MCP で Play するときの注意 |
 | 0.6 | 2026-10-26 | M2 完了。M3 の進み具合と詳細設計からの変更を追記。9 章に MCP で Play するときの注意を足した |
+| 0.7 | 2026-10-26 | M3 完了。M4 の進み具合と詳細設計からの変更を追記（画面は IMGUI のまま、フォントを決めてから uGUI に置き換える）。9 章に `GameRunner.Advance` |

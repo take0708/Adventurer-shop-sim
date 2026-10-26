@@ -9,7 +9,7 @@ namespace Shop.Game
     /// マウスのマスごとに CanPlace / CanMove を呼んで緑・赤と理由を出し、クリックで置く。
     /// 置いた物をクリックで選び、移動・撤去する。
     ///
-    /// M2 の仮の UI: パネルは IMGUI（OnGUI）で描く。uGUI の画面（BottomMenu など）は M4 で作り、そのときに置き換える。
+    /// 仮の UI: IMGUI で描く。日本語フォントを決めたら uGUI ＋ TextMeshPro に置き換える（kousei.md 11 章）。
     /// </summary>
     public sealed class PlacementMode : MonoBehaviour, IGameEventHandler
     {
@@ -83,7 +83,7 @@ namespace Shop.Game
             if (mouse == null) return;
 
             Vector2 screen = mouse.position.ReadValue();
-            bool overPanel = screen.x <= PanelWidth + 16f;
+            bool overPanel = ImGuiBlocker.Contains(screen);
             var world = _camera.ScreenToWorldPoint(new Vector3(screen.x, screen.y, -_camera.transform.position.z));
             var tile = TilePosition.FromWorld(world);
 
@@ -196,7 +196,9 @@ namespace Shop.Game
             // 閉じているときの「配置」ボタンは Hud が出す
             if (!_open) return;
 
-            GUILayout.BeginArea(new Rect(8, 8, PanelWidth, Screen.height - 16), GUI.skin.box);
+            var area = new Rect(8, 8, PanelWidth, Screen.height - 16);
+            ImGuiBlocker.Register(area);
+            GUILayout.BeginArea(area, GUI.skin.box);
             GUILayout.Label("<b>配置モード</b>（時間は止まっています）", new GUIStyle(GUI.skin.label) { richText = true });
             var state = Session.State;
             var layout = Session.Layout;
@@ -242,7 +244,11 @@ namespace Shop.Game
                 if (!canRemove.Ok) GUILayout.Label(FailReasonText.Get(canRemove.Reason));
 
                 var shelf = Session.ShelfById(sel.Id);
-                if (shelf != null) ShelfAssignGui(shelf);
+                if (shelf != null)
+                {
+                    var m = ShelfAssignPanel.DrawItems(Session, shelf);
+                    if (m != null) _message = m;
+                }
             }
             else
             {
@@ -254,40 +260,8 @@ namespace Shop.Game
             if (!string.IsNullOrEmpty(_message)) GUILayout.Label(_message);
 
             GUILayout.FlexibleSpace();
-            // M3 の仮: 問屋（M4）ができるまで、倉庫に品を直接入れる
-            if (GUILayout.Button("デバッグ: 倉庫に各 +10"))
-            {
-                foreach (var item in Session.UnlockedItems) Session.DebugAddStock(item, 10);
-                _message = "倉庫に解禁済みの品を 10 個ずつ入れました";
-            }
             if (GUILayout.Button("完了", GUILayout.Height(36))) Close();
             GUILayout.EndArea();
-        }
-
-        /// <summary>
-        /// 棚に並べる商品を選ぶ（SC-05 の代わり）。
-        /// M3 の仮: 配置モードの中だけで設定できる。ShelfAssignPanel（時間を止めない）は M4 で作る。
-        /// </summary>
-        void ShelfAssignGui(Shelf shelf)
-        {
-            GUILayout.Label($"並べる商品（今: {(shelf.Item != null ? shelf.Item.Name + " " + shelf.Displayed + "/" + shelf.Def.DisplayMax : "なし")}）");
-            var items = new System.Collections.Generic.List<ItemDef>();
-            if (shelf.IsBargainTable) items.AddRange(Session.Warehouse.RareItemsInStock);
-            else
-                foreach (var item in Session.UnlockedItems)
-                    if (item.Category == shelf.Def.ShelfCategory) items.Add(item);
-
-            foreach (var item in items)
-            {
-                bool current = shelf.Item == item;
-                if (GUILayout.Toggle(current, $"{item.Name}（倉庫 {Session.Warehouse.Count(item)}）", GUI.skin.button) && !current)
-                {
-                    var r = Session.AssignShelf(shelf.FixtureId, item);
-                    _message = r.Ok ? $"{item.Name}を並べました" : FailReasonText.Get(r.Reason);
-                }
-            }
-            if (items.Count == 0) GUILayout.Label(shelf.IsBargainTable ? "倉庫に行商人の品がありません" : "並べられる品がありません");
-            if (shelf.Item != null && GUILayout.Button("何も置かない")) Session.AssignShelf(shelf.FixtureId, null);
         }
     }
 }

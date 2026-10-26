@@ -14,6 +14,17 @@ namespace Shop.Core
 
     public enum MoneyReason { Sale, Purchase, Equipment, Refund, Expansion }
 
+    /// <summary>月が終わった。UI は月末収支を出して時間を止める（D-06）。</summary>
+    public sealed class MonthEndedEvent : GameEvent
+    {
+        public MonthlyReport Report { get; }
+
+        public MonthEndedEvent(int tick, MonthlyReport report) : base(tick)
+        {
+            Report = report;
+        }
+    }
+
     /// <summary>ゲームが始まった。UI はこれを見て配置モードで始める（kihonsekkei.md 4.5）。</summary>
     public sealed class SessionStartedEvent : GameEvent
     {

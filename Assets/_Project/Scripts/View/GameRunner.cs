@@ -50,15 +50,26 @@ namespace Shop.Game
         void Update()
         {
             if (Session == null) return;
+            Advance(Time.unscaledDeltaTime);
+        }
+
+        /// <summary>
+        /// 実時間 seconds ぶん進めて、イベントを配る。1 回で進めるのは MaxTicksPerFrame まで。
+        /// Update から呼ぶ。エディタからフレームを進めずに確かめるときにも使う。
+        /// </summary>
+        public void Advance(float seconds)
+        {
             if (!Session.IsEnded && !IsPaused)
             {
-                _accumulator += Time.unscaledDeltaTime * Speed;
+                _accumulator += seconds * Speed;
                 int n = 0;
                 while (_accumulator >= TimeConfig.SecondsPerTick && n < MaxTicksPerFrame)
                 {
                     Session.Tick();
                     _accumulator -= TimeConfig.SecondsPerTick;
                     n++;
+                    // 月末で止める。イベントを配るのはループのあとなので、ここで止めないと翌月へ進んでしまう
+                    if (Session.MonthEndedThisTick) Pause(PauseReason.Modal);
                     if (IsPaused) break;
                 }
                 // 超えた分は捨てる（kihonsekkei.md 2.2）

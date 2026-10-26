@@ -5,14 +5,13 @@ namespace Shop.Game
 {
     /// <summary>
     /// 画面上の情報（SC-02 上、shousaisekkei.md 11.4）。所持金、日付、月の進み、⏸ ▶ ▶▶。
-    /// M3 の仮: IMGUI で描く。uGUI の画面は M4 で作り、そのときに置き換える。
+    /// 仮の UI: IMGUI で描く。日本語フォントを決めたら uGUI ＋ TextMeshPro に置き換える（kousei.md 11 章）。
     /// </summary>
     public sealed class Hud : MonoBehaviour
     {
         const float Width = 420f;
 
         [SerializeField] GameRunner _runner;
-        [SerializeField] PlacementMode _placement;
 
         void OnGUI()
         {
@@ -21,6 +20,7 @@ namespace Shop.Game
             var clock = session.Clock;
 
             var area = new Rect(Screen.width - Width - 8, 8, Width, 64);
+            ImGuiBlocker.Register(area);
             GUILayout.BeginArea(area, GUI.skin.box);
             GUILayout.BeginHorizontal();
             GUILayout.Label($"{clock.Year} 年目 {clock.MonthOfYear} 月 {clock.Day} 日", GUILayout.Width(140));
@@ -51,8 +51,6 @@ namespace Shop.Game
             }
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
-
-            if (_placement != null && !_placement.IsOpen && GUI.Button(new Rect(8, 8, 120, 36), "配置")) _placement.Open();
         }
     }
 }

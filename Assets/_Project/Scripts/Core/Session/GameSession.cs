@@ -5,13 +5,14 @@ namespace Shop.Core
 {
     /// <summary>
     /// Core の窓口（shousaisekkei.md 4 章）。Tick で進め、コマンドで操作し、DrainEvents でイベントを受け取る。
-    /// M3 まで: 時間、配置、棚、客と会計。仕入れ・月末の集計は M4、評判は M5、行商人は M6 で足す。
+    /// M4 まで: 時間、配置、棚、客と会計、問屋、月末の集計。評判と星は M5、行商人は M6、年末と終了は M7 で足す。
     /// </summary>
     public sealed class GameSession
     {
         readonly PlacementValidator _validator;
         readonly CustomerSpawner _spawner;
         readonly CustomerFactory _factory;
+        readonly Wholesaler _wholesaler;
         readonly List<Shelf> _shelves = new List<Shelf>();
         readonly List<Counter> _counters = new List<Counter>();
         readonly List<Customer> _customers = new List<Customer>();
@@ -32,17 +33,16 @@ namespace Shop.Core
         public bool IsEnded => Clock.IsFinished;
         /// <summary>今月の来店予定の人数。</summary>
         public int PlannedVisits => _spawner.PlannedCount;
+        /// <summary>今月の途中集計。</summary>
+        public MonthlyReport CurrentReport { get; private set; }
+        /// <summary>
+        /// 直前の Tick で月が終わった（MonthEnded を積んだ）。
+        /// GameRunner は 1 フレームで何 Tick も進めるので、これを見て月末で止まる（shousaisekkei.md 11.2）。
+        /// </summary>
+        public bool MonthEndedThisTick { get; private set; }
 
         /// <summary>今の星で問屋が売る品。</summary>
-        public IReadOnlyList<ItemDef> UnlockedItems
-        {
-            get
-            {
-                var list = new List<ItemDef>();
-                foreach (var i in Config.Items) if (!i.IsRare && i.UnlockStar <= State.Star) list.Add(i);
-                return list;
-            }
-        }
+        public IReadOnlyList<ItemDef> UnlockedItems => _wholesaler.Unlocked(State.Star);
 
         internal IRandom Random { get; }
         internal GridPathfinder Pathfinder { get; }
@@ -63,6 +63,8 @@ namespace Shop.Core
             Brain = new CustomerBrain(this);
             _spawner = new CustomerSpawner(config, Random);
             _factory = new CustomerFactory(config, Random);
+            _wholesaler = new Wholesaler(this);
+            CurrentReport = new MonthlyReport(1, 0);
 
             // 初期配置は無料で置く。無料枠は減らさない（shousaisekkei.md 4.2）
             foreach (var (def, origin) in config.Balance.InitialLayout) AddFixtureObjects(Layout.Add(def, origin, 0));
@@ -76,6 +78,7 @@ namespace Shop.Core
         /// <summary>1 Tick 進める。終了後は何もしない（shousaisekkei.md 4.3、K-01）。</summary>
         public void Tick()
         {
+            MonthEndedThisTick = false;
             if (IsEnded) return;
             int t = Clock.TickInMonth;
 
@@ -93,11 +96,24 @@ namespace Shop.Core
 
             var clockEvents = Clock.Advance();
             if ((clockEvents & ClockEvents.DayChanged) != 0) Emit(new DayChangedEvent(Now, Clock.Day, Clock.Month));
-            if ((clockEvents & ClockEvents.MonthEnded) != 0 && !IsEnded)
-            {
-                // 翌月の準備（月末の集計は M4 で足す）
-                _spawner.PlanMonth(State.Star, Layout.Ambience);
-            }
+            if ((clockEvents & ClockEvents.MonthEnded) != 0) EndMonth();
+        }
+
+        /// <summary>
+        /// 月末の処理（kihonsekkei.md 7.1、shousaisekkei.md 9.2）。店内に残っている客はそのまま翌月へ。
+        /// 星の判定は M5、年末と終了は M7 で足す。
+        /// </summary>
+        void EndMonth()
+        {
+            int month = Clock.ElapsedTicks / Config.Time.TicksPerMonth;
+            CurrentReport.Close(0, State.Star, 0);
+            Emit(new MonthEndedEvent(Now, CurrentReport));
+            MonthEndedThisTick = true;
+            if (IsEnded) return;
+
+            // 翌月の準備
+            CurrentReport = new MonthlyReport(month + 1, 0);
+            _spawner.PlanMonth(State.Star, Layout.Ambience);
         }
 
         /// <summary>ためたイベントを返して空にする。返したリストは次の DrainEvents まで有効。</summary>
@@ -168,7 +184,11 @@ namespace Shop.Core
 
             int cost = PlacementCost(def);
             if (cost == 0 && def.Kind == FixtureKind.Shelf && def.UsesFreeShelf && def.Cost > 0) State.UseFreeShelf();
-            if (cost > 0) Pay(-cost, MoneyReason.Equipment);
+            if (cost > 0)
+            {
+                Pay(-cost, MoneyReason.Equipment);
+                CurrentReport.AddEquipment(cost);
+            }
 
             var f = Layout.Add(def, origin, cost);
             AddFixtureObjects(f);
@@ -215,7 +235,11 @@ namespace Shop.Core
             }
 
             int refund = f.PaidCost * Config.Balance.RefundPercent / 100;
-            if (refund > 0) Pay(refund, MoneyReason.Refund);
+            if (refund > 0)
+            {
+                Pay(refund, MoneyReason.Refund);
+                CurrentReport.AddEquipment(-refund);
+            }
             OnLayoutChanged();
             return CommandResult.Success;
         }
@@ -227,7 +251,11 @@ namespace Shop.Core
             int cost = NextExpansionCost;
             if (State.Money < cost) return CommandResult.Fail(FailReason.NotEnoughMoney);
 
-            if (cost > 0) Pay(-cost, MoneyReason.Expansion);
+            if (cost > 0)
+            {
+                Pay(-cost, MoneyReason.Expansion);
+                CurrentReport.AddEquipment(cost);
+            }
             Layout.Expand();
             Emit(new ShopExpandedEvent(Now, Layout.Stage));
             OnLayoutChanged();
@@ -241,6 +269,13 @@ namespace Shop.Core
             var shelf = ShelfById(fixtureId);
             if (shelf == null) return CommandResult.Fail(FailReason.NotFound);
             return shelf.Assign(itemOrNull);
+        }
+
+        /// <summary>問屋から仕入れる（shousaisekkei.md 5.4）。</summary>
+        public CommandResult BuyFromWholesaler(ItemDef item, int count)
+        {
+            if (IsEnded) return CommandResult.Fail(FailReason.GameOver);
+            return _wholesaler.Buy(item, count);
         }
 
         /// <summary>
@@ -273,6 +308,7 @@ namespace Shop.Core
             var c = new Customer(_nextCustomerId++, job, wants, budget, Layout.Entrance);
             c.StateTimer = Config.Balance.WalkTicksPerTile;
             _customers.Add(c);
+            CurrentReport.AddVisitor();
             Emit(new CustomerSpawnedEvent(Now, c.Id, job, c.Tile));
             return c;
         }
@@ -286,18 +322,27 @@ namespace Shop.Core
         /// <summary>Counter から呼ばれる。売上を足して、客の結果を決める（shousaisekkei.md 7.2）。</summary>
         internal void Checkout(Counter counter, Customer c)
         {
-            int amount = 0;
-            foreach (var (item, _) in c.Basket) amount += item.SellPrice;
+            int amount = 0, rare = 0;
+            foreach (var (item, _) in c.Basket)
+            {
+                amount += item.SellPrice;
+                if (item.IsRare) rare++;
+            }
+            CurrentReport.AddRareSold(rare);
             if (amount > 0)
             {
                 State.AddSales(amount);
+                CurrentReport.AddSales(amount);
                 Emit(new MoneyChangedEvent(Now, amount, MoneyReason.Sale, State.Money));
             }
             Emit(new CheckoutDoneEvent(Now, counter.FixtureId, c.Id, amount));
             Brain.OnCheckedOut(c);
         }
 
-        void Pay(int delta, MoneyReason reason)
+        /// <summary>客の結果が決まった（shousaisekkei.md 8.5）。評判は M5 で足す。</summary>
+        internal void RecordResult(Customer c, CustomerResult result) => CurrentReport.AddResult(result);
+
+        internal void Pay(int delta, MoneyReason reason)
         {
             State.AddMoney(delta);
             Emit(new MoneyChangedEvent(Now, delta, reason, State.Money));
