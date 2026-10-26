@@ -247,7 +247,7 @@ MCP で Play して確かめるときの注意:
 | MCP | ✓ Unity AI Assistant の MCP サーバーでつないだ（1 章） |
 | Git | ✓ 最初のコミットを行い、GitHub の公開リポジトリ（take0708/Adventurer-shop-sim）に push した |
 
-### M2 店内（2026-10-24 時点）
+### M2 店内（2026-10-26 完了）
 
 | 項目 | 状態 |
 |---|---|
@@ -255,7 +255,7 @@ MCP で Play して確かめるときの注意:
 | Data | ✓ ScriptableObject 7 種と `GameDatabase`、`ConfigBuilder`。アセットはメニュー **Shop/Create Step1 Data** で youken 5 章の値から作る（`Assets/_Project/Data/`） |
 | Game | ✓ `GameRunner`、`EventRouter`、`GridView`、`FixtureView`、`PlacementMode`、`FailReasonText`。シーンはメニュー **Shop/Build Game Scene** で `Assets/_Project/Scenes/Game.unity` に作る |
 | テスト | ✓ 47 件すべて成功（UT-CFG-01〜03、UT-LAY-01〜08、UT-PTH-01〜02 ほか） |
-| 画面 | △ Play で床・壁・入口・道・配置物の表示と、配置コマンドの結果は確かめた。**マウスでの配置・移動・撤去と左のパネルは、まだ手で確かめていない** |
+| 画面 | ✓ Play で床・壁・入口・道・配置物が出る。マウスでの配置・移動・撤去と左のパネルも手で確かめた（2026-10-26） |
 
 詳細設計からの変更・先送り:
 
