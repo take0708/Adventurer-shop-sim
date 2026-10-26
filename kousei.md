@@ -294,7 +294,7 @@ MCP で Play して確かめるときの注意:
 | 項目 | 状態 |
 |---|---|
 | Core | ✓ `Wholesaler`（判定順は詳細設計 5.4）、`BuyFromWholesaler`、`MonthlyReport`（売上・仕入れ・設備投資・来店・結果の内訳・限定品の販売数）、月末処理（集計を締めて `MonthEnded` → 翌月の集計と来店予定）、`MonthEndedThisTick` |
-| Game | ✓ `GameRunner` が月末の Tick で止まる（`Advance(秒)` に切り出し）、`BottomMenu`（仕入れ / 配置）、`WholesalerPanel`（+1 / +5 / +10、合計、購入、未解禁はグレー）、`ShelfAssignPanel`（棚をクリックで開く。時間は止めない）、`ModalQueue` と `MonthlyReportDialog`（OK / Enter / Space で閉じて再開）、`ImGuiBlocker`（パネルの上のクリックを店内に通さない） |
+| Game | ✓ `GameRunner` が月末の Tick で止まる（`Advance(秒)` に切り出し）、`BottomMenu`（仕入れ / 配置）、配置モードにも「仕入れ（問屋）」ボタン（わかりにくかったため。2026-10-26）、`WholesalerPanel`（+1 / +5 / +10、合計、購入、未解禁はグレー）、`ShelfAssignPanel`（棚をクリックで開く。時間は止めない）、`ModalQueue` と `MonthlyReportDialog`（OK / Enter / Space で閉じて再開）、`ImGuiBlocker`（パネルの上のクリックを店内に通さない） |
 | テスト | ✓ 85 件すべて成功（UT-STK-01〜04、UT-END-01 ほか） |
 | 画面 | △ Play で、仕入れて棚に並べ、2 倍速で進めると 600 Tick ちょうどで止まり月末収支が出る（Modal で一時停止）ところまで確かめた。**パネルのマウス操作と月末収支の表示・閉じる操作は、まだ手で確かめていない** |
 

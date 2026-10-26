@@ -19,6 +19,8 @@ namespace Shop.Game
 
         [SerializeField] GameRunner _runner;
         [SerializeField] Camera _camera;
+        [Tooltip("配置モードからも仕入れパネルを開けるようにする")]
+        [SerializeField] WholesalerPanel _wholesaler;
         [SerializeField] Color _ok = new Color(0.3f, 0.9f, 0.3f, 0.55f);
         [SerializeField] Color _ng = new Color(0.95f, 0.25f, 0.25f, 0.55f);
         [SerializeField] Color _selection = new Color(1f, 1f, 1f, 0.35f);
@@ -43,7 +45,7 @@ namespace Shop.Game
             if (e is SessionStartedEvent)
             {
                 Open();
-                _message = "まずは棚を 3 台置きましょう（無料）";
+                _message = "まずは棚を 3 台置きましょう（無料）。「仕入れ」で品を買い、棚を選んで並べます";
             }
             else if (e is LayoutChangedEvent && _selectedId != 0 && Session.Layout.FindById(_selectedId) == null)
             {
@@ -193,7 +195,7 @@ namespace Shop.Game
             if (Session == null) return;
             GUI.skin.label.wordWrap = true;
 
-            // 閉じているときの「配置」ボタンは Hud が出す
+            // 閉じているときの「配置」ボタンは BottomMenu が出す
             if (!_open) return;
 
             var area = new Rect(8, 8, PanelWidth, Screen.height - 16);
@@ -204,6 +206,11 @@ namespace Shop.Game
             var layout = Session.Layout;
             GUILayout.Label($"所持金 {state.Money}G　無料枠 残り {state.FreeShelvesLeft}");
             GUILayout.Label($"棚 {layout.ShelfCount}/{layout.Size.ShelfMax}　カウンター {layout.CounterCount}/{layout.Size.CounterMax}　雰囲気 {layout.Ambience}");
+            if (_wholesaler != null && GUILayout.Toggle(_wholesaler.IsOpen, "仕入れ（問屋）", GUI.skin.button, GUILayout.Height(30)) != _wholesaler.IsOpen)
+            {
+                if (_wholesaler.IsOpen) _wholesaler.Close();
+                else _wholesaler.Open();
+            }
             GUILayout.Space(6);
 
             foreach (var def in Session.Config.Fixtures)

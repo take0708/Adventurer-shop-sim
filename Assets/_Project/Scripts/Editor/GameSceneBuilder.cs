@@ -62,6 +62,7 @@ namespace Shop.Editor
             Set(floating, "_camera", cam);
             Set(placement, "_runner", runner);
             Set(placement, "_camera", cam);
+            Set(placement, "_wholesaler", wholesaler);
             Set(hud, "_runner", runner);
             Set(menu, "_runner", runner);
             Set(menu, "_placement", placement);
