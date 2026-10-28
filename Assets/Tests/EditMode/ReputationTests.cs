@@ -142,6 +142,20 @@ namespace Shop.Tests.EditMode
         }
 
         [Test]
+        public void DebugAddReputation_RaisesStarAtMonthEnd()
+        {
+            var b = new SessionBuilder();
+            b.Session.DebugAddReputation(b.Session.RepToNextStar + 10);
+            b.Drain();
+            Assert.That(b.Session.State.Reputation, Is.EqualTo(60));
+            Assert.That(b.Of<ReputationChangedEvent>().Last().Reputation, Is.EqualTo(60));
+            Assert.That(b.Session.State.Star, Is.EqualTo(1));
+
+            var (_, raised) = EndMonth(b);
+            Assert.That(raised.NewStar, Is.EqualTo(2));
+        }
+
+        [Test]
         public void RepToNextStarIsZeroAtMaxStar()
         {
             var b = new SessionBuilder();

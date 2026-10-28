@@ -15,8 +15,11 @@ namespace Shop.Game
 
         void OnGUI()
         {
-            if (_runner.Session == null || _placement.IsOpen || (_modal != null && _modal.IsShowing)) return;
-            var rect = new Rect(8, Screen.height - 52, 260, 44);
+            var session = _runner.Session;
+            if (session == null || _placement.IsOpen || (_modal != null && _modal.IsShowing)) return;
+            // デバッグ用のボタンはエディタと開発ビルドだけに出す
+            bool debug = Debug.isDebugBuild && session.RepToNextStar > 0;
+            var rect = new Rect(8, Screen.height - 52, debug ? 460 : 260, 44);
             ImGuiBlocker.Register(rect);
             GUILayout.BeginArea(rect);
             GUILayout.BeginHorizontal();
@@ -30,6 +33,10 @@ namespace Shop.Game
                 _wholesaler.Close();
                 _placement.Open();
             }
+            // 月末までに不満の客で少し減っても次の星に届くよう、10 多めに足す
+            int add = session.RepToNextStar + 10;
+            if (debug && GUILayout.Button($"デバッグ: 評判 +{add}\n（月末に ★{session.State.Star + 1}）", GUILayout.Height(40), GUILayout.Width(190)))
+                session.DebugAddReputation(add);
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
         }

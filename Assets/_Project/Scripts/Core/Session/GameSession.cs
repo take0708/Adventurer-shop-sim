@@ -295,6 +295,17 @@ namespace Shop.Core
             if (count > 0) Warehouse.Add(item, count);
         }
 
+        /// <summary>
+        /// デバッグ用: 評判を足す（星アップの演出などを早く確かめるため）。
+        /// 星はふつうと同じく月末に上がる。
+        /// </summary>
+        public void DebugAddReputation(int amount)
+        {
+            if (amount == 0) return;
+            int delta = State.AddReputation(amount);
+            Emit(new ReputationChangedEvent(Now, delta, State.Reputation, CustomerResult.Full, 0));
+        }
+
         // ---- 内部 ----
 
         void AddFixtureObjects(PlacedFixture f)
