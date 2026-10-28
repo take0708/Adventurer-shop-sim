@@ -7,20 +7,20 @@ namespace Shop.Game
 {
     /// <summary>
     /// 月末からのダイアログの順番待ち（shousaisekkei.md 11.5）。列が空でなければ時間を止める（Modal）。
-    /// 月末収支 → 星アップ。年末審査・結果発表は M7 で足す。
-    /// 星アップは止めない演出（2 秒）。列にほかがなければ再開してから演出する。
+    /// 月末収支 → 星アップ。年末審査・結果発表は M7 で足す。どれも OK / Enter / Space で閉じて次へ。
     /// 仮の UI: IMGUI で描く。日本語フォントを決めたら uGUI ＋ TextMeshPro に置き換える（kousei.md 11 章）。
     /// </summary>
     public sealed class ModalQueue : MonoBehaviour, IGameEventHandler
     {
         [SerializeField] GameRunner _runner;
-        [SerializeField] float _starUpSeconds = 2f;
 
         readonly Queue<GameEvent> _queue = new Queue<GameEvent>();
-        float _effectLeft;
 
-        /// <summary>操作を止めるダイアログを出している（止めない演出だけのときは false）。</summary>
-        public bool IsShowing => _queue.Count > 0 && !(_queue.Peek() is StarRaisedEvent);
+        public bool IsShowing => _queue.Count > 0;
+        /// <summary>出すのを待っているダイアログの数（今出しているものを含む）。</summary>
+        public int PendingCount => _queue.Count;
+        /// <summary>今出しているダイアログのもとのイベント。なければ null。</summary>
+        public GameEvent Current => _queue.Count > 0 ? _queue.Peek() : null;
 
         public void Handle(GameEvent e)
         {
@@ -31,9 +31,6 @@ namespace Shop.Game
                     _runner.Resume(PauseReason.Modal);
                     break;
                 case MonthEndedEvent _:
-                    _queue.Enqueue(e);
-                    _runner.Pause(PauseReason.Modal);
-                    break;
                 case StarRaisedEvent _:
                     _queue.Enqueue(e);
                     _runner.Pause(PauseReason.Modal);
@@ -43,13 +40,7 @@ namespace Shop.Game
 
         void Update()
         {
-            if (_queue.Count == 0) return;
-            if (_queue.Peek() is StarRaisedEvent)
-            {
-                _effectLeft -= Time.unscaledDeltaTime;
-                if (_effectLeft <= 0f) Next();
-                return;
-            }
+            if (!IsShowing) return;
             var k = Keyboard.current;
             if (k != null && (k.enterKey.wasPressedThisFrame || k.numpadEnterKey.wasPressedThisFrame || k.spaceKey.wasPressedThisFrame)) Next();
         }
@@ -57,66 +48,76 @@ namespace Shop.Game
         void Next()
         {
             if (_queue.Count > 0) _queue.Dequeue();
-            if (_queue.Count == 0)
-            {
-                _runner.Resume(PauseReason.Modal);
-                return;
-            }
-            if (_queue.Peek() is StarRaisedEvent)
-            {
-                _effectLeft = _starUpSeconds;
-                // 星アップの演出は止めない。ほかに待っているものがなければ再開してから演出する
-                if (_queue.Count == 1) _runner.Resume(PauseReason.Modal);
-            }
+            if (_queue.Count == 0) _runner.Resume(PauseReason.Modal);
         }
 
         void OnGUI()
         {
             if (!IsShowing) return;
+            bool ok = false;
             switch (_queue.Peek())
             {
                 case MonthEndedEvent m:
-                    if (MonthlyReportDialog.Draw(m.Report, _runner.Session)) Next();
+                    ok = MonthlyReportDialog.Draw(m.Report, _runner.Session);
                     break;
                 case StarRaisedEvent r:
-                    StarUpEffect.Draw(r, _runner.Session, 1f - _effectLeft / _starUpSeconds);
+                    ok = StarUpDialog.Draw(r, _runner.Session);
                     break;
             }
+            if (ok) Next();
+        }
+
+        /// <summary>ダイアログの後ろを暗くし、店内のクリックを通さない。</summary>
+        public static void DimBackground()
+        {
+            var old = GUI.color;
+            GUI.color = new Color(0, 0, 0, 0.5f);
+            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+            GUI.color = old;
+            ImGuiBlocker.Register(new Rect(0, 0, Screen.width, Screen.height));
         }
     }
 
-    /// <summary>星アップの演出（SC-09）。2 秒、止めない。</summary>
-    public static class StarUpEffect
+    /// <summary>
+    /// 星アップ（SC-09）。月末収支の OK のあとに出す。OK / Enter / Space で閉じる。
+    /// 基本設計では「2 秒、止めない演出」だったが、見落としやすいのでダイアログにした（2026-10-29）。
+    /// </summary>
+    public static class StarUpDialog
     {
-        static GUIStyle _big, _small;
+        const float Width = 460f, Height = 260f;
+        static GUIStyle _big, _center;
 
-        /// <param name="t">0〜1 の進み。</param>
-        public static void Draw(StarRaisedEvent e, GameSession session, float t)
+        /// <summary>描いて、OK が押されたら true。</summary>
+        public static bool Draw(StarRaisedEvent e, GameSession session)
         {
             if (_big == null)
             {
                 _big = new GUIStyle(GUI.skin.label) { fontSize = 40, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-                _small = new GUIStyle(GUI.skin.label) { fontSize = 18, alignment = TextAnchor.MiddleCenter };
+                _big.normal.textColor = new Color(1f, 0.85f, 0.2f);
+                _center = new GUIStyle(GUI.skin.label) { fontSize = 15, alignment = TextAnchor.MiddleCenter, wordWrap = true };
             }
-            float alpha = t < 0.8f ? 1f : (1f - t) / 0.2f;
-            var old = GUI.color;
-            GUI.color = new Color(0, 0, 0, 0.35f * alpha);
-            GUI.DrawTexture(new Rect(0, Screen.height * 0.3f, Screen.width, Screen.height * 0.4f), Texture2D.whiteTexture);
-            GUI.color = new Color(1, 1, 1, alpha);
+            ModalQueue.DimBackground();
 
-            float y = Screen.height * 0.32f;
-            _big.normal.textColor = new Color(1f, 0.85f, 0.2f);
-            GUI.Label(new Rect(0, y, Screen.width, 60), $"★{e.NewStar} になりました！", _big);
-            _small.normal.textColor = Color.white;
+            var rect = new Rect((Screen.width - Width) / 2, (Screen.height - Height) / 2, Width, Height);
+            GUILayout.BeginArea(rect, GUI.skin.window);
+            GUILayout.Label($"★{e.NewStar} になりました！", _big, GUILayout.Height(60));
+            GUILayout.Space(6);
             if (e.Unlocked.Length > 0)
             {
                 var names = new List<string>();
                 foreach (var i in e.Unlocked) names.Add(i.Name);
-                GUI.Label(new Rect(0, y + 70, Screen.width, 30), "仕入れられるようになった品: " + string.Join("、", names), _small);
+                GUILayout.Label("仕入れられるようになった品: " + string.Join("、", names), _center);
+            }
+            else
+            {
+                GUILayout.Label("新しく仕入れられる品はありません", _center);
             }
             var star = session.Config.StarOf(e.NewStar);
-            GUI.Label(new Rect(0, y + 100, Screen.width, 30), $"来店数と予算が増えます（月 {star.BaseVisits} 人、予算 {star.BudgetMin}〜{star.BudgetMax}G）", _small);
-            GUI.color = old;
+            GUILayout.Label($"来店数と予算が増えます（月 {star.BaseVisits} 人、予算 {star.BudgetMin}〜{star.BudgetMax}G）", _center);
+            GUILayout.FlexibleSpace();
+            bool ok = GUILayout.Button("OK（Enter / Space）", GUILayout.Height(34));
+            GUILayout.EndArea();
+            return ok;
         }
     }
 
@@ -132,14 +133,9 @@ namespace Shop.Game
             int year = (r.Month - 1) / cfg.MonthsPerYear + 1;
             int month = (r.Month - 1) % cfg.MonthsPerYear + 1;
 
-            // 後ろを暗くする
-            var old = GUI.color;
-            GUI.color = new Color(0, 0, 0, 0.5f);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = old;
+            ModalQueue.DimBackground();
 
             var rect = new Rect((Screen.width - Width) / 2, (Screen.height - Height) / 2, Width, Height);
-            ImGuiBlocker.Register(new Rect(0, 0, Screen.width, Screen.height));
             GUILayout.BeginArea(rect, GUI.skin.window);
             GUILayout.Label($"{year} 年目 {month} 月の収支");
             GUILayout.Space(4);

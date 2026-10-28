@@ -144,7 +144,7 @@ Scripts/
     ├─ WholesalerPanel.cs / ShelfAssignPanel.cs / ExpandPanel.cs / MerchantPanel.cs
     ├─ PlacementMode.cs
     ├─ ModalQueue.cs             月末収支 → 星アップ → 年末審査 → 結果発表 の順番待ち
-    ├─ MonthlyReportDialog.cs / StarUpEffect.cs / YearReviewDialog.cs / ResultDialog.cs
+    ├─ MonthlyReportDialog.cs / StarUpDialog.cs / YearReviewDialog.cs / ResultDialog.cs
     ├─ CommentTable.cs           吹き出しのセリフ（T-13）
     ├─ FailReasonText.cs         FailReason → 表示文
     ├─ UnityroomScoreSubmitter.cs
@@ -1195,7 +1195,7 @@ public sealed class GameRunner : MonoBehaviour
 | `MerchantPanel` | SC-07 | 止める（Merchant） | 品、欲しがる職業、仕入れ値・売値、1〜2 個、`TicksLeft` のゲージ。特売台がなければ注意書き |
 | `ModalQueue` | — | 止める（Modal） | 下の 11.5 |
 | `MonthlyReportDialog` | SC-08 | 止める | `MonthlyReport` を出す。OK / Enter / Space で閉じる |
-| `StarUpEffect` | SC-09 | 止めない | 2 秒の演出 |
+| `StarUpDialog` | SC-09 | 止める | 「★n になりました！」、解禁された品、来店数と予算。OK / Enter / Space で閉じる（2026-10-29 に止めない 2 秒の演出から変更） |
 | `YearReviewDialog` | SC-10 | 止める | `YearRecord`、講評 |
 | `ResultDialog` | SC-11 | 止める | `GameResult`、スコア送信、もう一度 / タイトルへ |
 
@@ -1209,10 +1209,7 @@ public sealed class GameRunner : MonoBehaviour
 受けたら列に足す: MonthEnded → 月末収支, StarRaised → 星アップ,
                  YearEnded → 年末審査, GameEnded → 結果発表
 列が空でなければ Pause(Modal)
-先頭を出す。閉じたら次へ
-星アップ（止めない演出）の番:
-    列にほかがなければ Resume(Modal) してから 2 秒の演出
-    ほかがあれば、止めたまま 2 秒の演出 → 次へ
+先頭を出す。閉じたら次へ（星アップもダイアログ。2026-10-29 に変更）
 列が空になったら Resume(Modal)（結果発表は閉じない）
 ```
 
@@ -1356,7 +1353,7 @@ kousei.md 8 章の M2〜M8 に、本書のクラスを割り当てる。各段�
 | M2 店内 | `Tile`, `CommandResult`, Config 一式, `ConfigValidator`, `ShopLayout`, `PlacementValidator`, `GridPathfinder`, `GameSession`（配置コマンドだけ） | `GameDatabase` と各 SO, `ConfigBuilder`, `GameRunner`, `EventRouter`, `GridView`, `FixtureView`, `PlacementMode`（仮の四角） | UT-CFG, UT-LAY, UT-PTH |
 | M3 客と販売 | `Warehouse`（初期在庫はデバッグ用に直接入れる）, `Shelf`, `Counter`, `Customer`, `CustomerFactory`, `CustomerSpawner`, `CustomerBrain`, `ShopState`（お金・売上） | `ShelfView`, `CounterView`, `CustomerView`, `FloatingText`, `Hud`（所持金） | UT-SHF, UT-CUS, UT-BHV, UT-CNT |
 | M4 仕入れと時間 | `Wholesaler`, `MonthlyReport`, 月末処理（星なし） | `WholesalerPanel`, `ShelfAssignPanel`, `BottomMenu`, `ModalQueue`, `MonthlyReportDialog`, 倍速・一時停止 | UT-STK, UT-END-01 |
-| M5 評判 | `ReputationSystem`, 星・解禁 | `StarUpEffect`, `CommentTable`, Hud の星と評判 | UT-REP |
+| M5 評判 | `ReputationSystem`, 星・解禁 | `StarUpDialog`, `CommentTable`, Hud の星と評判 | UT-REP |
 | M6 行商人・拡張・装飾 | `Merchant`, 特売台, `ExpandShop`, 雰囲気値 | `MerchantView`, `MerchantPanel`, `ExpandPanel` | UT-MER, UT-LAY-08, UT-CUS-04, 06 |
 | M7 終わり方 | `YearRecord`, `GameResult`, `IScoreSubmitter` | `YearReviewDialog`, `ResultDialog`, `TitleScreen`, Title シーン | UT-END-02, 03, UT-DET, 比較テスト |
 | M8 公開準備 | — | `UnityroomScoreSubmitter`, WebGL ビルド設定, 日本語フォント | 手で確かめること（13.3） |
