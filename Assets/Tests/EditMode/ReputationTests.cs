@@ -142,17 +142,23 @@ namespace Shop.Tests.EditMode
         }
 
         [Test]
-        public void DebugAddReputation_RaisesStarAtMonthEnd()
+        public void DebugStarUpAtMonthEnd_RaisesStarEvenIfCustomersLowerReputation()
         {
-            var b = new SessionBuilder();
-            b.Session.DebugAddReputation(b.Session.RepToNextStar + 10);
-            b.Drain();
-            Assert.That(b.Session.State.Reputation, Is.EqualTo(60));
-            Assert.That(b.Of<ReputationChangedEvent>().Last().Reputation, Is.EqualTo(60));
+            // 棚がないので、来た 15 人はみな不満（−2）で帰る
+            var b = new SessionBuilder(s => s.NoVisitors = false);
+            b.Session.DebugAddReputation(40);
+            b.Session.DebugStarUpAtMonthEnd();
+            Assert.That(b.Session.DebugStarUpPending, Is.True);
             Assert.That(b.Session.State.Star, Is.EqualTo(1));
 
-            var (_, raised) = EndMonth(b);
+            var (report, raised) = EndMonth(b);
             Assert.That(raised.NewStar, Is.EqualTo(2));
+            Assert.That(report.RepAfter, Is.EqualTo(50));
+            Assert.That(b.Session.DebugStarUpPending, Is.False);
+
+            // 次の月は予約していないので上がらない
+            var (_, again) = EndMonth(b);
+            Assert.That(again, Is.Null);
         }
 
         [Test]

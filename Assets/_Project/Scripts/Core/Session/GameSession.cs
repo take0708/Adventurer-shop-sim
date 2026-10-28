@@ -20,6 +20,7 @@ namespace Shop.Core
         List<GameEvent> _events = new List<GameEvent>();
         List<GameEvent> _drained = new List<GameEvent>();
         int _nextCustomerId = 1;
+        bool _debugStarUp;
 
         public GameConfig Config { get; }
         public GameClock Clock { get; }
@@ -111,6 +112,11 @@ namespace Shop.Core
         void EndMonth()
         {
             int month = Clock.ElapsedTicks / Config.Time.TicksPerMonth;
+            if (_debugStarUp)
+            {
+                _debugStarUp = false;
+                if (RepToNextStar > 0) DebugAddReputation(RepToNextStar);
+            }
             bool raised = _reputation.TryRaiseStar(month + 1, out int newStar, out var unlocked);
             // 集計の星は月末の判定のあと
             CurrentReport.Close(State.Reputation, State.Star, RepToNextStar);
@@ -296,9 +302,15 @@ namespace Shop.Core
         }
 
         /// <summary>
-        /// デバッグ用: 評判を足す（星アップの演出などを早く確かめるため）。
-        /// 星はふつうと同じく月末に上がる。
+        /// デバッグ用: 今月の月末の判定の直前に、次の星に足りない分の評判を足す（星アップの演出を早く確かめるため）。
+        /// 押してから月末までに不満の客で評判が減っても、必ず次の星に上がる。
         /// </summary>
+        public void DebugStarUpAtMonthEnd() => _debugStarUp = true;
+
+        /// <summary>DebugStarUpAtMonthEnd を押してあり、今月の月末に次の星へ上がる予定か。</summary>
+        public bool DebugStarUpPending => _debugStarUp;
+
+        /// <summary>デバッグ用: 評判を足す。</summary>
         public void DebugAddReputation(int amount)
         {
             if (amount == 0) return;

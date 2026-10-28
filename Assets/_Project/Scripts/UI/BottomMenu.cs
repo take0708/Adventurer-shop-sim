@@ -33,10 +33,16 @@ namespace Shop.Game
                 _wholesaler.Close();
                 _placement.Open();
             }
-            // 月末までに不満の客で少し減っても次の星に届くよう、10 多めに足す
-            int add = session.RepToNextStar + 10;
-            if (debug && GUILayout.Button($"デバッグ: 評判 +{add}\n（月末に ★{session.State.Star + 1}）", GUILayout.Height(40), GUILayout.Width(190)))
-                session.DebugAddReputation(add);
+            if (debug)
+            {
+                // 月末の判定の直前に、次の星に足りない分を足す（月末までに評判が減っても必ず上がる）
+                GUI.enabled = !session.DebugStarUpPending;
+                string label = session.DebugStarUpPending
+                    ? $"デバッグ: 月末に ★{session.State.Star + 1}\n（予約済み）"
+                    : $"デバッグ: 月末に ★{session.State.Star + 1} へ";
+                if (GUILayout.Button(label, GUILayout.Height(40), GUILayout.Width(190))) session.DebugStarUpAtMonthEnd();
+                GUI.enabled = true;
+            }
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
         }
