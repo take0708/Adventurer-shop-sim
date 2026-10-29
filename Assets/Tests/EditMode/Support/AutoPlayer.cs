@@ -12,10 +12,24 @@ namespace Shop.Tests.EditMode
     public sealed class AutoPlayer
     {
         const int ShelfReserve = 150, CounterReserve = 150, ExpandReserve = 400, DecorReserve = 800;
-        const int CustomersPerCounter = 25, RepValue = 15;
+        const int RepValue = 15;
+        /// <summary>月の途中でも、この Tick ごとに仕入れを足す（人も品切れを見て足すため）。</summary>
+        const int RestockEveryTicks = 150;
 
         readonly GameSession _s;
         readonly GameConfig _cfg;
+
+        /// <summary>
+        /// 月初に、設備に使う前に取っておく仕入れのお金の割合（%）。調べるときに変える。
+        /// 0 が 2 年の結果がいちばんよかった（2026-10-29 の比較。月の途中でも仕入れを足すので、取っておかなくても回る）。
+        /// </summary>
+        public int ReservePercent { get; set; } = 0;
+
+        /// <summary>カウンター 1 台で受け持つ月の客数（シミュレーションは 25）。調べるときに変える。</summary>
+        public int CustomersPerCounter { get; set; } = 25;
+
+        /// <summary>遊んでいる間のイベント（調べるときに使う）。</summary>
+        public event Action<GameEvent> EventSeen;
 
         public AutoPlayer(GameSession session)
         {
@@ -31,13 +45,19 @@ namespace Shop.Tests.EditMode
             {
                 _s.Tick();
                 foreach (var e in _s.DrainEvents())
+                {
+                    EventSeen?.Invoke(e);
                     if (e is MerchantArrivedEvent) OnMerchant();
+                }
                 if (_s.MonthEndedThisTick && !_s.IsEnded) MonthStart();
+                else if (!_s.IsEnded && _s.Clock.TickInMonth % RestockEveryTicks == 0) Buy(CurrentPlan());
             }
         }
 
         void MonthStart()
         {
+            // 設備にお金を使う前に、今月の仕入れのぶんを取っておく（シミュレーションは売れたときに仕入れ値を引くので、この心配がない）
+            _reserve = StockCost() * ReservePercent / 100;
             PlaceShelves();
             PlaceCounters();
             Expand();
@@ -91,6 +111,27 @@ namespace Shop.Tests.EditMode
             return result;
         }
 
+        int _reserve;
+
+        /// <summary>設備に使ってよいお金。</summary>
+        int Spare => _s.State.Money - _reserve;
+
+        /// <summary>今の棚の割り当てで、今月の見込みぶんを仕入れるのに要るお金。</summary>
+        int StockCost()
+        {
+            var shelves = NormalShelves.ToList();
+            var alloc = Allocate(shelves.Select(s => s.Def));
+            var demand = Demand();
+            int cost = 0;
+            foreach (var g in alloc.Where(a => a.Item != null).GroupBy(a => a.Item))
+            {
+                int cap = g.Sum(a => MonthlyCap(a.Shelf));
+                int need = (int)Math.Min(Math.Ceiling(demand[g.Key]), cap) - _s.Warehouse.Count(g.Key);
+                if (need > 0) cost += need * g.Key.BuyPrice;
+            }
+            return cost;
+        }
+
         IEnumerable<Shelf> NormalShelves => _s.Shelves.Where(s => !s.IsBargainTable);
 
         // ---- 1〜4: 置く・広げる ----
@@ -109,7 +150,7 @@ namespace Shop.Tests.EditMode
                     double gain = Allocate(current.Append(t)).Sum(a => a.Gain) - baseGain;
                     if (gain > pickGain) { pick = t; pickGain = gain; }
                 }
-                if (pick == null || _s.State.Money < _s.PlacementCost(pick) + ShelfReserve) return;
+                if (pick == null || Spare < _s.PlacementCost(pick) + ShelfReserve) return;
                 if (!PlaceAnywhere(pick)) return;
             }
         }
@@ -119,7 +160,7 @@ namespace Shop.Tests.EditMode
             var counter = _cfg.Fixtures.First(f => f.Kind == FixtureKind.Counter);
             while (_s.Layout.CounterCount * CustomersPerCounter < _s.PlannedVisits
                    && _s.Layout.CounterCount < _s.Layout.Size.CounterMax
-                   && _s.State.Money >= counter.Cost + CounterReserve)
+                   && Spare >= counter.Cost + CounterReserve)
                 if (!PlaceAnywhere(counter)) return;
         }
 
@@ -127,7 +168,7 @@ namespace Shop.Tests.EditMode
         {
             if (_s.Layout.Stage >= _cfg.MaxStage) return;
             bool full = _s.Layout.ShelfCount >= _s.Layout.Size.ShelfMax || _s.Layout.CounterCount >= _s.Layout.Size.CounterMax;
-            if (full && _s.State.Money >= _s.NextExpansionCost + ExpandReserve) _s.ExpandShop();
+            if (full && Spare >= _s.NextExpansionCost + ExpandReserve) _s.ExpandShop();
         }
 
         void PlaceDecor()
@@ -135,7 +176,7 @@ namespace Shop.Tests.EditMode
             if (_s.Layout.Ambience >= _cfg.Balance.AmbienceMax) return;
             foreach (var d in _cfg.Fixtures.Where(f => f.Kind == FixtureKind.Decor).OrderByDescending(f => f.Cost))
             {
-                if (_s.State.Money < d.Cost + DecorReserve) continue;
+                if (Spare < d.Cost + DecorReserve) continue;
                 if (PlaceAnywhere(d)) return;
             }
         }
@@ -168,18 +209,42 @@ namespace Shop.Tests.EditMode
             return plan;
         }
 
+        List<(Shelf Shelf, ItemDef Item)> CurrentPlan() => NormalShelves.Select(s => (s, s.Item)).ToList();
+
+        /// <summary>
+        /// 品ごとに「見込み需要と棚の販売上限の小さいほう」のうち、月の残りのぶんまで倉庫と棚にあるようにする。
+        /// お金が足りないときは、1 個ずつ順番に買って、どの品にも行き渡らせる。
+        /// </summary>
         void Buy(List<(Shelf Shelf, ItemDef Item)> plan)
         {
             var demand = Demand();
-            foreach (var group in plan.Where(p => p.Item != null).GroupBy(p => p.Item))
+            double rest = 1.0 - (double)_s.Clock.TickInMonth / _cfg.Time.TicksPerMonth;
+            var need = new Dictionary<ItemDef, int>();
+            foreach (var group in plan.Where(p => p.Item != null && !p.Item.IsRare).GroupBy(p => p.Item))
             {
                 var item = group.Key;
                 int cap = group.Sum(p => MonthlyCap(p.Shelf.Def));
                 int onShelves = _s.Shelves.Where(s => s.Item == item).Sum(s => s.Displayed);
-                int need = (int)Math.Min(Math.Ceiling(demand[item]), cap) - _s.Warehouse.Count(item) - onShelves;
-                int n = Math.Min(need, _s.State.Money / item.BuyPrice);
-                if (n > 0) _s.BuyFromWholesaler(item, n);
+                int n = (int)Math.Ceiling(Math.Min(demand[item], cap) * rest) - _s.Warehouse.Count(item) - onShelves;
+                if (n > 0) need[item] = n;
             }
+            var order = need.Keys.OrderBy(i => i.BuyPrice).ToList();
+            var buy = order.ToDictionary(i => i, i => 0);
+            int money = _s.State.Money;
+            bool any = true;
+            while (any)
+            {
+                any = false;
+                foreach (var item in order)
+                    if (buy[item] < need[item] && money >= item.BuyPrice)
+                    {
+                        buy[item]++;
+                        money -= item.BuyPrice;
+                        any = true;
+                    }
+            }
+            foreach (var kv in buy)
+                if (kv.Value > 0) _s.BuyFromWholesaler(kv.Key, kv.Value);
         }
 
         // ---- 行商人 ----
