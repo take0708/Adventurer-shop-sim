@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Shop.Core
 {
-    /// <summary>設定の食い違いを起動時に見つける（shousaisekkei.md 3.3 V1〜V9）。</summary>
+    /// <summary>設定の食い違いを起動時に見つける（shousaisekkei.md 3.3 V1〜V9、V10 は M7 で足した）。</summary>
     public static class ConfigValidator
     {
         /// <summary>問題があれば InvalidOperationException。メッセージに全部の問題を並べる。</summary>
@@ -96,6 +96,14 @@ namespace Shop.Core
             // V9 行商人が月をまたがない
             if (b.MerchantArriveMaxTick + b.MerchantStayTicks > config.Time.TicksPerMonth)
                 errors.Add("V9: 行商人が月をまたぐ（MerchantArriveMaxTick + MerchantStayTicks > TicksPerMonth）");
+
+            // V10 年末講評の境目が年の数だけあり、Good < Excellent
+            int years = config.Time.TotalMonths / config.Time.MonthsPerYear;
+            if (b.ReviewGoodRep.Count != years || b.ReviewExcellentRep.Count != years)
+                errors.Add($"V10: 年末講評の境目が {years} 年分ない");
+            else
+                for (int y = 0; y < years; y++)
+                    if (b.ReviewGoodRep[y] >= b.ReviewExcellentRep[y]) errors.Add($"V10: {y + 1} 年目の講評の境目が Good >= Excellent");
 
             // V7 初期配置が段階 1 に置ける。広さと入口が正しいときだけ確かめる
             if (errors.Count == 0) CheckInitialLayout(config, errors);

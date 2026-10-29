@@ -19,6 +19,9 @@ namespace Shop.Tests.EditMode
             public int MerchantArriveMaxTick = 400;
             public int QueuePatienceTicks = 120;
             public int MaxCustomerStayTicks = 400;
+            // shousaisekkei.md 9.3（案）
+            public List<int> ReviewGoodRep = new List<int> { 150, 300 };
+            public List<int> ReviewExcellentRep = new List<int> { 450, 900 };
             /// <summary>true なら来店数を 0 にする（客をテストで直接出すとき）。</summary>
             public bool NoVisitors;
             public List<ItemDef> Items = new List<ItemDef>();
@@ -42,7 +45,8 @@ namespace Shop.Tests.EditMode
                     maxCustomerStayTicks: MaxCustomerStayTicks, spawnWindowEndTick: 570,
                     merchantArriveMinTick: 60, merchantArriveMaxTick: MerchantArriveMaxTick, merchantStayTicks: 150, merchantMaxBuy: 2,
                     refundPercent: 100, freeShelfCount: 3,
-                    entrance: Entrance, initialLayout: InitialLayout);
+                    entrance: Entrance, initialLayout: InitialLayout,
+                    reviewGoodRep: ReviewGoodRep, reviewExcellentRep: ReviewExcellentRep);
                 var stars = Stars;
                 if (NoVisitors)
                     stars = Stars.ConvertAll(x => new StarDef(x.Star, x.RequiredRep, 0, x.BudgetMin, x.BudgetMax, x.MerchantChancePercent));

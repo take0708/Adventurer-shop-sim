@@ -36,6 +36,8 @@ namespace Shop.Tests.EditMode
         {
             AssertSameProperties(_fromAsset.Balance, _expected.Balance, nameof(BalanceDef.InitialLayout));
             Assert.That(Describe(_fromAsset.Balance.InitialLayout), Is.EqualTo(Describe(_expected.Balance.InitialLayout)));
+            Assert.That(_fromAsset.Balance.ReviewGoodRep, Is.EqualTo(_expected.Balance.ReviewGoodRep));
+            Assert.That(_fromAsset.Balance.ReviewExcellentRep, Is.EqualTo(_expected.Balance.ReviewExcellentRep));
         }
 
         [Test]

@@ -41,9 +41,8 @@ Adventurer-shop-sim/              ← Unity プロジェクト兼 Git リポジ�
 ├─ ProjectSettings/
 └─ Assets/
     ├─ Settings/              ← テンプレートの URP 設定（そのまま使う）
-    ├─ Scenes/SampleScene.unity ← テンプレートのサンプル。Title / Game を作ったら消す
     ├─ _Project/              ← 自作のものはすべてここ（アセットストア品と混ざらない）
-        ├─ Scenes/            ← Title.unity / Game.unity（M2 以降で作る）
+        ├─ Scenes/            ← Title.unity（M7）/ Game.unity（M2）。メニュー Shop/Build Title Scene・Build Game Scene で作る
         ├─ Scripts/
         │   ├─ Shop.Game.asmdef ← View/ と UI/ をまとめるアセンブリ
         │   ├─ Core/          ← ゲームのルール（Unity に依存しない C#）。Shop.Core.asmdef
@@ -340,6 +339,23 @@ MCP で Play して確かめるときの注意:
 - `AutoPlayer` と比較テスト（13.2）はまだ書いていない。M7 で年末・終了とあわせて書く
 - 行商人パネルは、買ったあとに「閉じる」が枠の外へ押し出されて閉じられなかった。枠を高くし、行の数を操作の前後で変えず、Esc / Enter でも閉じるようにした（拡張パネルも同じ）
 
+### M7 終わり方（2026-10-29 時点）
+
+| 項目 | 状態 |
+|---|---|
+| Core | ✓ `YearRecord`（増えた評判・売上・星・講評 3 段階）、`GameResult`（総売上＝スコア、最終の星と評判、星の月、年の記録）、`YearEnded` / `GameEnded`、`IScoreSubmitter`、`GameSession.Reports` / `Years` / `Result`。講評の境目は `BalanceDef.ReviewGoodRep` / `ReviewExcellentRep`（V10） |
+| Game | ✓ `YearReviewDialog`（年末審査）、`ResultDialog`（結果発表。閉じない。もう一度 / タイトルへ、スコア送信と再送）、`LogScoreSubmitter`（ログに出すだけの仮）、`TitleScreen` と Title シーン（スタート、音 ON/OFF、クレジット）。ビルドの順は Title → Game。SampleScene は消した |
+| テスト | ✓ 116 件成功、1 件 Inconclusive（下の比較テスト）。UT-END-02, 03、講評の境目、2 年目の数え方、UT-DET-01, 02、`AutoPlayer` と比較テスト（13.2、`[Category("Slow")]`） |
+| 画面 | △ Play で、最後の月末に「月末収支 → 年末審査 → 結果発表」が順に待つこと、もう一度で 1 か月目に戻ること、タイトルとゲームを行き来できることを確かめた。**ダイアログの見た目と操作は、まだ手で確かめていない** |
+
+詳細設計からの変更・先送り:
+
+- 年末講評の境目を `BalanceDef` と `BalanceConfig` に置き、検証 V10 を足した（詳細設計 3.3 に追記）
+- 24 か月目の月末でも星の判定はする。そのとき `StarReachedMonth` は 25 になり、結果発表では「最後の月末に上がった」と出す
+- スコア送信は `LogScoreSubmitter`（ログだけ）。unityroom の送信（11.7）は M8
+- ゲームの名前は仮（「（仮）冒険者の店」、T-10）。講評の文言も仮（T-10・T-13）
+- **比較テストの結果（2026-10-29）**: 20 シードで、総売上の平均 33,696G（21,275〜42,685G）、最終の星は ★4 が 17 シード・★3 が 3 シード、★5 には届かなかった。目安（総売上 60,000〜100,000G、★5 は 18〜24 か月目）を大きく下回る。星の月の平均はおよそ ★2 6 か月目 / ★3 12 か月目 / ★4 22 か月目（シミュレーションは 4 / 9 / 14 / 21）。満足の割合は低くなく、評判の増え方が遅いのが主な原因に見える。`AutoPlayer` が下手なせいか、実時間の動きのせいか、数値の調整で直すかは、balance.md の課題として別に決める
+
 ---
 
 ## 変更履歴
@@ -356,3 +372,4 @@ MCP で Play して確かめるときの注意:
 | 0.8 | 2026-10-26 | M4 完了。M5 の進み具合と詳細設計からの変更を追記 |
 | 0.9 | 2026-10-29 | M5 完了（星アップをダイアログにした） |
 | 0.10 | 2026-10-29 | M6 完了。進み具合と詳細設計からの変更を追記 |
+| 0.11 | 2026-10-29 | M7 の進み具合、比較テストの結果を追記。SampleScene を消した |

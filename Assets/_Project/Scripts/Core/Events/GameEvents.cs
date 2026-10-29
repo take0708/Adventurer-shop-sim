@@ -45,6 +45,28 @@ namespace Shop.Core
         }
     }
 
+    /// <summary>年が終わった（12 か月目・24 か月目の月末）。UI は月末収支・星アップのあとに年末審査を出す。</summary>
+    public sealed class YearEndedEvent : GameEvent
+    {
+        public YearRecord Record { get; }
+
+        public YearEndedEvent(int tick, YearRecord record) : base(tick)
+        {
+            Record = record;
+        }
+    }
+
+    /// <summary>2 年が終わった。このあと Tick とコマンドは何もしない（GameOver）。UI は最後に結果発表を出す。</summary>
+    public sealed class GameEndedEvent : GameEvent
+    {
+        public GameResult Result { get; }
+
+        public GameEndedEvent(int tick, GameResult result) : base(tick)
+        {
+            Result = result;
+        }
+    }
+
     public sealed class ReputationChangedEvent : GameEvent
     {
         /// <summary>実際に変わった量（0 で止めたあと）。</summary>

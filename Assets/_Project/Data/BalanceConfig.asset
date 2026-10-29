@@ -41,3 +41,5 @@ MonoBehaviour:
   initialLayout:
   - fixture: {fileID: 11400000, guid: 7fd5525034448a24dafe8b62bd993845, type: 2}
     origin: {x: 4, y: 1}
+  reviewGoodRep: 960000002c010000
+  reviewExcellentRep: c201000084030000

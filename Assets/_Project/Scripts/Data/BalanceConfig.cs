@@ -52,5 +52,11 @@ namespace Shop.Data
         public int freeShelfCount = 3;
         public Vector2Int entrance = new Vector2Int(2, 0);
         public List<InitialFixture> initialLayout = new List<InitialFixture>();
+
+        [Header("年末審査（講評の境目。年ごと）")]
+        [Tooltip("その年に増えた評判がこれ以上なら「よい」")]
+        public List<int> reviewGoodRep = new List<int> { 150, 300 };
+        [Tooltip("これ以上なら「すばらしい」")]
+        public List<int> reviewExcellentRep = new List<int> { 450, 900 };
     }
 }

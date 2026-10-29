@@ -33,6 +33,10 @@ namespace Shop.Core
         public Tile Entrance { get; }
         /// <summary>開始時に無料で置く配置物（カウンター 1 台）。</summary>
         public IReadOnlyList<(FixtureDef Def, Tile Origin)> InitialLayout { get; }
+        /// <summary>年末審査の講評の境目（年ごと）。その年に増えた評判がこれ以上なら Good。</summary>
+        public IReadOnlyList<int> ReviewGoodRep { get; }
+        /// <summary>これ以上なら Excellent。</summary>
+        public IReadOnlyList<int> ReviewExcellentRep { get; }
 
         public BalanceDef(
             int startMoney,
@@ -43,7 +47,8 @@ namespace Shop.Core
             int maxCustomerStayTicks, int spawnWindowEndTick,
             int merchantArriveMinTick, int merchantArriveMaxTick, int merchantStayTicks, int merchantMaxBuy,
             int refundPercent, int freeShelfCount,
-            Tile entrance, IEnumerable<(FixtureDef Def, Tile Origin)> initialLayout)
+            Tile entrance, IEnumerable<(FixtureDef Def, Tile Origin)> initialLayout,
+            IEnumerable<int> reviewGoodRep, IEnumerable<int> reviewExcellentRep)
         {
             StartMoney = startMoney;
             RepFull = repFull;
@@ -68,6 +73,8 @@ namespace Shop.Core
             FreeShelfCount = freeShelfCount;
             Entrance = entrance;
             InitialLayout = new List<(FixtureDef Def, Tile Origin)>(initialLayout ?? throw new ArgumentNullException(nameof(initialLayout)));
+            ReviewGoodRep = new List<int>(reviewGoodRep ?? throw new ArgumentNullException(nameof(reviewGoodRep)));
+            ReviewExcellentRep = new List<int>(reviewExcellentRep ?? throw new ArgumentNullException(nameof(reviewExcellentRep)));
         }
     }
 

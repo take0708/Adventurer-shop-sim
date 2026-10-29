@@ -8,12 +8,13 @@ using UnityEngine;
 namespace Shop.Editor
 {
     /// <summary>
-    /// Game シーンを組み立てる（kousei.md 2 章のシーン）。カメラ、GameRunner、EventRouter、View、配置モードを置いてつなぐ。
+    /// Game シーンと Title シーンを組み立てる（kousei.md 2 章のシーン）。カメラ、GameRunner、EventRouter、View、配置モードを置いてつなぐ。
     /// 作り直すと手で足した物は消えるので、シーンを手で触り始めたら使わない。
     /// </summary>
     public static class GameSceneBuilder
     {
         const string ScenePath = "Assets/_Project/Scenes/Game.unity";
+        const string TitleScenePath = "Assets/_Project/Scenes/Title.unity";
 
         [MenuItem("Shop/Build Game Scene")]
         public static void Build()
@@ -54,6 +55,8 @@ namespace Shop.Editor
             var expand = ui.AddComponent<ExpandPanel>();
             var merchantPanel = ui.AddComponent<MerchantPanel>();
             var modal = ui.AddComponent<ModalQueue>();
+            var result = ui.AddComponent<ResultDialog>();
+            var submitter = ui.AddComponent<LogScoreSubmitter>();
 
             Set(runner, "_database", db);
             Set(runner, "_router", router);
@@ -89,12 +92,33 @@ namespace Shop.Editor
             Set(shelfPanel, "_camera", cam);
             Set(shelfPanel, "_placement", placement);
             Set(modal, "_runner", runner);
+            Set(modal, "_result", result);
+            Set(result, "_runner", runner);
+            Set(result, "_submitter", submitter);
             // 描き直しの順: 床 → 配置物 → 棚の中身 → カウンター → 客 → 行商人 → 文字 → 配置モード → パネル → 月末などのダイアログ
             SetList(router, "_handlers", new List<Object> { grid, fixtures, shelves, counters, customers, merchantView, floating, bubbles, placement, wholesaler, shelfPanel, expand, merchantPanel, modal });
 
             EditorSceneManager.SaveScene(scene, ScenePath);
-            AddToBuildSettings(ScenePath);
+            AddToBuildSettings(ScenePath, 1);
             Debug.Log($"Game シーンを作りました: {ScenePath}");
+        }
+
+        /// <summary>Title シーン（SC-01）。カメラとタイトル画面だけ。ビルドの最初のシーンにする。</summary>
+        [MenuItem("Shop/Build Title Scene")]
+        public static void BuildTitle()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
+            var cam = camGo.AddComponent<Camera>();
+            cam.orthographic = true;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.22f, 0.3f, 0.22f);
+            camGo.transform.position = new Vector3(0, 0, -10);
+            new GameObject("Title").AddComponent<TitleScreen>();
+
+            EditorSceneManager.SaveScene(scene, TitleScenePath);
+            AddToBuildSettings(TitleScenePath, 0);
+            Debug.Log($"Title シーンを作りました: {TitleScenePath}");
         }
 
         static void Set(Object target, string field, Object value)
@@ -113,11 +137,12 @@ namespace Shop.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        static void AddToBuildSettings(string path)
+        /// <summary>ビルドのシーン一覧の index 番目に置く（Title が 0、Game が 1）。</summary>
+        static void AddToBuildSettings(string path, int index)
         {
             var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
-            if (scenes.Exists(s => s.path == path)) return;
-            scenes.Insert(0, new EditorBuildSettingsScene(path, true));
+            scenes.RemoveAll(s => s.path == path);
+            scenes.Insert(Mathf.Min(index, scenes.Count), new EditorBuildSettingsScene(path, true));
             EditorBuildSettings.scenes = scenes.ToArray();
         }
     }

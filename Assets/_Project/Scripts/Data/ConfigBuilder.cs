@@ -91,7 +91,8 @@ namespace Shop.Data
                 merchantArriveMinTick: b.merchantArriveMinTick, merchantArriveMaxTick: b.merchantArriveMaxTick,
                 merchantStayTicks: b.merchantStayTicks, merchantMaxBuy: b.merchantMaxBuy,
                 refundPercent: b.refundPercent, freeShelfCount: b.freeShelfCount,
-                entrance: new Tile(b.entrance.x, b.entrance.y), initialLayout: initial);
+                entrance: new Tile(b.entrance.x, b.entrance.y), initialLayout: initial,
+                reviewGoodRep: b.reviewGoodRep, reviewExcellentRep: b.reviewExcellentRep);
 
             return new GameConfig(time, balance, items, jobs, stars, fixtures, sizes);
         }

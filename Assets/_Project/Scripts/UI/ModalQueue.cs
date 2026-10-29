@@ -7,12 +7,14 @@ namespace Shop.Game
 {
     /// <summary>
     /// 月末からのダイアログの順番待ち（shousaisekkei.md 11.5）。列が空でなければ時間を止める（Modal）。
-    /// 月末収支 → 星アップ。年末審査・結果発表は M7 で足す。どれも OK / Enter / Space で閉じて次へ。
+    /// 月末収支 → 星アップ → 年末審査 → 結果発表。結果発表のほかは OK / Enter / Space で閉じて次へ。
+    /// 結果発表は閉じない（もう一度 / タイトルへ を選ぶ）。
     /// 仮の UI: IMGUI で描く。日本語フォントを決めたら uGUI ＋ TextMeshPro に置き換える（kousei.md 11 章）。
     /// </summary>
     public sealed class ModalQueue : MonoBehaviour, IGameEventHandler
     {
         [SerializeField] GameRunner _runner;
+        [SerializeField] ResultDialog _result;
 
         readonly Queue<GameEvent> _queue = new Queue<GameEvent>();
 
@@ -32,6 +34,8 @@ namespace Shop.Game
                     break;
                 case MonthEndedEvent _:
                 case StarRaisedEvent _:
+                case YearEndedEvent _:
+                case GameEndedEvent _:
                     _queue.Enqueue(e);
                     _runner.Pause(PauseReason.Modal);
                     break;
@@ -40,13 +44,14 @@ namespace Shop.Game
 
         void Update()
         {
-            if (!IsShowing) return;
+            if (!IsShowing || _queue.Peek() is GameEndedEvent) return;
             var k = Keyboard.current;
             if (k != null && (k.enterKey.wasPressedThisFrame || k.numpadEnterKey.wasPressedThisFrame || k.spaceKey.wasPressedThisFrame)) Next();
         }
 
         void Next()
         {
+            if (_queue.Count > 0 && _queue.Peek() is GameEndedEvent) return;
             if (_queue.Count > 0) _queue.Dequeue();
             if (_queue.Count == 0) _runner.Resume(PauseReason.Modal);
         }
@@ -62,6 +67,12 @@ namespace Shop.Game
                     break;
                 case StarRaisedEvent r:
                     ok = StarUpDialog.Draw(r, _runner.Session);
+                    break;
+                case YearEndedEvent y:
+                    ok = YearReviewDialog.Draw(y.Record, _runner.Session);
+                    break;
+                case GameEndedEvent g:
+                    _result.Draw(g.Result, _runner.Session);
                     break;
             }
             if (ok) Next();
@@ -118,6 +129,58 @@ namespace Shop.Game
             bool ok = GUILayout.Button("OK（Enter / Space）", GUILayout.Height(34));
             GUILayout.EndArea();
             return ok;
+        }
+    }
+
+    /// <summary>年末審査（SC-10、kihonsekkei.md 7.4）。その年に増えた評判、今の星、売上、ひとこと講評。OK / Enter / Space で閉じる。</summary>
+    public static class YearReviewDialog
+    {
+        const float Width = 400f, Height = 300f;
+        static GUIStyle _title, _comment;
+
+        /// <summary>描いて、OK が押されたら true。</summary>
+        public static bool Draw(YearRecord y, GameSession session)
+        {
+            if (_title == null)
+            {
+                _title = new GUIStyle(GUI.skin.label) { fontSize = 24, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+                _comment = new GUIStyle(GUI.skin.label) { fontSize = 16, alignment = TextAnchor.MiddleCenter, wordWrap = true };
+                _comment.normal.textColor = new Color(1f, 0.85f, 0.2f);
+            }
+            ModalQueue.DimBackground();
+
+            var rect = new Rect((Screen.width - Width) / 2, (Screen.height - Height) / 2, Width, Height);
+            GUILayout.BeginArea(rect, GUI.skin.window);
+            GUILayout.Label($"{y.Year} 年目の年末審査", _title, GUILayout.Height(40));
+            GUILayout.Space(6);
+            Row("この 1 年で増えた評判", $"{y.RepGained}");
+            Row("今の星", new string('★', y.Star) + new string('☆', session.Config.MaxStar - y.Star));
+            Row("この 1 年の売上", $"{y.Sales}G");
+            GUILayout.Space(10);
+            GUILayout.Label(Comment(y.Grade), _comment);
+            GUILayout.FlexibleSpace();
+            bool ok = GUILayout.Button("OK（Enter / Space）", GUILayout.Height(34));
+            GUILayout.EndArea();
+            return ok;
+        }
+
+        /// <summary>講評の文言。仮（T-10・T-13 で決める）。</summary>
+        public static string Comment(ReviewGrade g)
+        {
+            switch (g)
+            {
+                case ReviewGrade.Excellent: return "「すばらしい！ 街いちばんの評判です」";
+                case ReviewGrade.Good: return "「よい調子です。この調子で」";
+                default: return "「まずまずです。来年に期待しています」";
+            }
+        }
+
+        static void Row(string label, string value)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(label, GUILayout.Width(180));
+            GUILayout.Label(value);
+            GUILayout.EndHorizontal();
         }
     }
 

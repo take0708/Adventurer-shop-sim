@@ -303,6 +303,7 @@ public sealed class GameConfig
 | V7 | 初期配置が段階 1 の中で置ける（6.3 の判定を通る） |
 | V8 | `DisplayMax`・`RestockTicks` は棚なら 1 以上 |
 | V9 | `MerchantArriveMaxTick + MerchantStayTicks <= TicksPerMonth`（行商人が月をまたがない） |
+| V10 | 年末講評の境目（`ReviewGoodRep` / `ReviewExcellentRep`）が年の数だけあり、各年で Good < Excellent（M7 で足した） |
 
 ---
 

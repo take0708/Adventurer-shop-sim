@@ -78,6 +78,18 @@ namespace Shop.Game
             Route();
         }
 
+        /// <summary>
+        /// デバッグ用: 今月の月末まで一気に進める（年末審査・結果発表を早く確かめるため）。月末で止まり、イベントをまとめて配る。
+        /// </summary>
+        public void DebugSkipToMonthEnd()
+        {
+            if (Session.IsEnded) return;
+            do Session.Tick(); while (!Session.MonthEndedThisTick && !Session.IsEnded);
+            _accumulator = 0;
+            Pause(PauseReason.Modal);
+            Route();
+        }
+
         /// <summary>一時停止中もコマンドのイベントを配る。</summary>
         void Route()
         {

@@ -64,6 +64,8 @@ namespace Shop.Game
                     session.DebugCallMerchant();
                 if (Button(GUILayout.Button("デバッグ: +2000G", GUILayout.Height(40), GUILayout.Width(130))))
                     session.DebugAddMoney(2000);
+                if (Button(GUILayout.Button("デバッグ: 月末まで進める", GUILayout.Height(40), GUILayout.Width(170))))
+                    _runner.DebugSkipToMonthEnd();
             }
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
