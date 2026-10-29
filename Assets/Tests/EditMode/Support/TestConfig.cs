@@ -14,7 +14,7 @@ namespace Shop.Tests.EditMode
         public sealed class Spec
         {
             public TimeConfig Time = TimeConfig.Step1Default;
-            public int StartMoney = 500;
+            public int StartMoney = 800;
             public Tile Entrance = new Tile(2, 0);
             public int MerchantArriveMaxTick = 400;
             public int QueuePatienceTicks = 120;
@@ -94,14 +94,14 @@ namespace Shop.Tests.EditMode
             // youken.md 5.2, 5.4, 5.7
             s.Stars.Add(new StarDef(1, 0, 15, 40, 130, 20));
             s.Stars.Add(new StarDef(2, 50, 22, 40, 180, 25));
-            s.Stars.Add(new StarDef(3, 220, 32, 80, 380, 30));
-            s.Stars.Add(new StarDef(4, 560, 44, 150, 650, 35));
-            s.Stars.Add(new StarDef(5, 1250, 58, 250, 1000, 40));
+            s.Stars.Add(new StarDef(3, 200, 32, 80, 380, 30));
+            s.Stars.Add(new StarDef(4, 480, 44, 150, 650, 35));
+            s.Stars.Add(new StarDef(5, 1050, 58, 250, 1000, 40));
 
             // youken.md 5.5、kihonsekkei.md 4.2, 6.2
-            s.Fixtures.Add(new FixtureDef("shelf_weapon", "武器棚", FixtureKind.Shelf, ItemCategory.Weapon, 100, 1, 1, false, 3, 40, 0, 0, true, true));
-            s.Fixtures.Add(new FixtureDef("shelf_armor", "防具棚", FixtureKind.Shelf, ItemCategory.Armor, 100, 1, 1, false, 3, 40, 0, 0, true, true));
-            s.Fixtures.Add(new FixtureDef("shelf_tool", "道具棚", FixtureKind.Shelf, ItemCategory.Tool, 100, 1, 1, false, 8, 15, 0, 0, true, true));
+            s.Fixtures.Add(new FixtureDef("shelf_weapon", "武器棚", FixtureKind.Shelf, ItemCategory.Weapon, 100, 1, 1, false, 4, 40, 0, 0, true, true));
+            s.Fixtures.Add(new FixtureDef("shelf_armor", "防具棚", FixtureKind.Shelf, ItemCategory.Armor, 100, 1, 1, false, 4, 40, 0, 0, true, true));
+            s.Fixtures.Add(new FixtureDef("shelf_tool", "道具棚", FixtureKind.Shelf, ItemCategory.Tool, 100, 1, 1, false, 10, 15, 0, 0, true, true));
             s.Fixtures.Add(new FixtureDef("counter", "カウンター", FixtureKind.Counter, ItemCategory.Tool, 250, 2, 1, false, 0, 0, 0, 0, false, false));
             s.Fixtures.Add(new FixtureDef("bargain_table", "特売台", FixtureKind.Shelf, ItemCategory.Rare, 200, 1, 1, false, 2, 15, 0, 1, false, false));
             s.Fixtures.Add(new FixtureDef("plant", "観葉植物", FixtureKind.Decor, ItemCategory.Tool, 80, 1, 1, false, 0, 0, 1, 0, false, false));

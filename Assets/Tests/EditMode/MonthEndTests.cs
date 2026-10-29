@@ -60,7 +60,7 @@ namespace Shop.Tests.EditMode
 
             Assert.That(report.Month, Is.EqualTo(1));
             Assert.That(report.IsClosed, Is.True);
-            Assert.That(s.State.Money - 500, Is.EqualTo(report.Net));
+            Assert.That(s.State.Money - s.Config.Balance.StartMoney, Is.EqualTo(report.Net));
             Assert.That(report.Sales, Is.EqualTo(s.State.TotalSales));
             Assert.That(report.Sales, Is.EqualTo(events.OfType<CheckoutDoneEvent>().Sum(e => e.Amount)));
             Assert.That(report.Visitors, Is.EqualTo(15));

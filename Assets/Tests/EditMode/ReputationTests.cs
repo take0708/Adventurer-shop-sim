@@ -93,7 +93,7 @@ namespace Shop.Tests.EditMode
             Assert.That(report.Star, Is.EqualTo(2));
             Assert.That(report.RepBefore, Is.EqualTo(0));
             Assert.That(report.RepAfter, Is.EqualTo(60));
-            Assert.That(report.RepToNextStar, Is.EqualTo(220 - 60));
+            Assert.That(report.RepToNextStar, Is.EqualTo(200 - 60));
 
             // MonthEnded のあとに StarRaised
             Assert.That(b.Events.IndexOf(raised), Is.GreaterThan(b.Events.FindIndex(e => e is MonthEndedEvent)));

@@ -12,12 +12,12 @@ namespace Shop.Tests.EditMode
         {
             var b = new SessionBuilder();
             var weapon = b.Shelf("shelf_weapon", 0, 3, "copper_sword", 10);
-            Assert.That(weapon.Displayed, Is.EqualTo(3));
-            Assert.That(b.Session.Warehouse.Count(b.Item("copper_sword")), Is.EqualTo(7));
+            Assert.That(weapon.Displayed, Is.EqualTo(4));
+            Assert.That(b.Session.Warehouse.Count(b.Item("copper_sword")), Is.EqualTo(6));
 
             var tool = b.Shelf("shelf_tool", 5, 3, "potion", 20);
-            Assert.That(tool.Displayed, Is.EqualTo(8));
-            Assert.That(b.Session.Warehouse.Count(b.Item("potion")), Is.EqualTo(12));
+            Assert.That(tool.Displayed, Is.EqualTo(10));
+            Assert.That(b.Session.Warehouse.Count(b.Item("potion")), Is.EqualTo(10));
         }
 
         [Test]
@@ -30,15 +30,15 @@ namespace Shop.Tests.EditMode
             tool.TryTake();
 
             b.Tick(14);
-            Assert.That(tool.Displayed, Is.EqualTo(7));
+            Assert.That(tool.Displayed, Is.EqualTo(9));
             b.Tick(1);
-            Assert.That(tool.Displayed, Is.EqualTo(8));
+            Assert.That(tool.Displayed, Is.EqualTo(10));
 
             b.Tick(24);
-            Assert.That(weapon.Displayed, Is.EqualTo(2));
-            b.Tick(1);
             Assert.That(weapon.Displayed, Is.EqualTo(3));
-            Assert.That(b.Session.Warehouse.Count(b.Item("copper_sword")), Is.EqualTo(6));
+            b.Tick(1);
+            Assert.That(weapon.Displayed, Is.EqualTo(4));
+            Assert.That(b.Session.Warehouse.Count(b.Item("copper_sword")), Is.EqualTo(5));
         }
 
         [Test]
@@ -67,9 +67,9 @@ namespace Shop.Tests.EditMode
 
             Assert.That(b.Session.AssignShelf(weapon.FixtureId, b.Item("wooden_staff")).Ok, Is.True);
             Assert.That(weapon.Item, Is.SameAs(b.Item("wooden_staff")));
-            Assert.That(weapon.Displayed, Is.EqualTo(3));
+            Assert.That(weapon.Displayed, Is.EqualTo(4));
             Assert.That(b.Session.Warehouse.Count(b.Item("copper_sword")), Is.EqualTo(10));
-            Assert.That(b.Session.Warehouse.Count(b.Item("wooden_staff")), Is.EqualTo(2));
+            Assert.That(b.Session.Warehouse.Count(b.Item("wooden_staff")), Is.EqualTo(1));
 
             Assert.That(b.Session.AssignShelf(weapon.FixtureId, null).Ok, Is.True);
             Assert.That(weapon.Item, Is.Null);
@@ -106,13 +106,13 @@ namespace Shop.Tests.EditMode
         }
 
         [Test]
-        public void UT_SHF_06_WeaponShelfSupplies18InFirstMonthAnd15After()
+        public void UT_SHF_06_WeaponShelfSupplies19InFirstMonthAnd15After()
         {
             var b = new SessionBuilder();
             var copper = b.Item("copper_sword");
             var weapon = b.Shelf("shelf_weapon", 0, 3, "copper_sword", 100);
             var warehouse = b.Session.Warehouse;
-            Assert.That(warehouse.Count(copper), Is.EqualTo(97));
+            Assert.That(warehouse.Count(copper), Is.EqualTo(96));
 
             // 毎 Tick、並んでいれば 1 個売れる
             for (int i = 0; i < 600; i++)
@@ -121,8 +121,8 @@ namespace Shop.Tests.EditMode
                 b.Session.Tick();
             }
             b.Drain();
-            // 倉庫から棚に出た数 = 最初に並ぶ 3 個 ＋ 補充 15 個
-            Assert.That(100 - warehouse.Count(copper), Is.EqualTo(18));
+            // 倉庫から棚に出た数 = 最初に並ぶ 4 個 ＋ 補充 15 個
+            Assert.That(100 - warehouse.Count(copper), Is.EqualTo(19));
 
             int before = warehouse.Count(copper);
             for (int i = 0; i < 600; i++)

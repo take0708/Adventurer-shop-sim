@@ -16,7 +16,7 @@ MonoBehaviour:
   daysPerMonth: 30
   monthsPerYear: 12
   totalMonths: 24
-  startMoney: 500
+  startMoney: 800
   repFull: 2
   repPartial: 0
   repNone: -2

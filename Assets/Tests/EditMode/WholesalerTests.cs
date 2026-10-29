@@ -55,7 +55,7 @@ namespace Shop.Tests.EditMode
             b.Drain();
             b.Events.Clear();
 
-            Assert.That(b.Session.BuyFromWholesaler(copper, 9).Reason, Is.EqualTo(FailReason.NotEnoughMoney));
+            Assert.That(b.Session.BuyFromWholesaler(copper, 14).Reason, Is.EqualTo(FailReason.NotEnoughMoney));   // 840G > 800G
             b.Drain();
             Assert.That(b.Session.State.Money, Is.EqualTo(money));
             Assert.That(b.Session.Warehouse.Count(copper), Is.EqualTo(0));

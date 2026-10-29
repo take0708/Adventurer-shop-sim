@@ -1269,7 +1269,7 @@ public sealed class GameRunner : MonoBehaviour
 | UT-SHF-03 | 棚 | 倉庫が空なら補充されない。並ぶ数 0 で `ShelfEmptied` |
 | UT-SHF-04 | 棚 | 商品を変えると並んでいた分が倉庫に戻る |
 | UT-SHF-05 | 棚 | 武器棚に薬は `WrongCategory`。特売台に問屋の品は `WrongCategory`。倉庫にない限定品は `NotInWarehouse` |
-| UT-SHF-06 | 棚 | 600 Tick ずっと売れ続けたとき、武器棚から売れる数が 18（最初に並ぶ 3 個 ＋ 補充 15 個）。2 か月目以降は月 15 |
+| UT-SHF-06 | 棚 | 600 Tick ずっと売れ続けたとき、武器棚から売れる数が 19（最初に並ぶ 4 個 ＋ 補充 15 個）。2 か月目以降は月 15 |
 | UT-LAY-01 | 配置 | L1: 外・入口・重なりで失敗 |
 | UT-LAY-02 | 配置 | カウンターを y=0 に置くと `NoPayTile` |
 | UT-LAY-03 | 配置 | L2: 段階 1 で棚 7 台目は `LimitReached`。特売台 2 台目は `LimitReached`、特売台は棚の数に入らない |

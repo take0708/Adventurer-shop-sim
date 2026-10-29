@@ -20,7 +20,7 @@ MonoBehaviour:
   _width: 1
   _height: 1
   _walkable: 0
-  _displayMax: 3
+  _displayMax: 4
   _restockTicks: 40
   _ambience: 0
   _maxCount: 0

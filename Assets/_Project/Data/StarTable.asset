@@ -23,17 +23,17 @@ MonoBehaviour:
     budgetMin: 40
     budgetMax: 180
     merchantChancePercent: 25
-  - requiredRep: 220
+  - requiredRep: 200
     baseVisits: 32
     budgetMin: 80
     budgetMax: 380
     merchantChancePercent: 30
-  - requiredRep: 560
+  - requiredRep: 480
     baseVisits: 44
     budgetMin: 150
     budgetMax: 650
     merchantChancePercent: 35
-  - requiredRep: 1250
+  - requiredRep: 1050
     baseVisits: 58
     budgetMin: 250
     budgetMax: 1000

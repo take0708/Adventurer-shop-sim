@@ -53,9 +53,9 @@ namespace Shop.Editor
             {
                 new StarTable.Row { requiredRep = 0, baseVisits = 15, budgetMin = 40, budgetMax = 130, merchantChancePercent = 20 },
                 new StarTable.Row { requiredRep = 50, baseVisits = 22, budgetMin = 40, budgetMax = 180, merchantChancePercent = 25 },
-                new StarTable.Row { requiredRep = 220, baseVisits = 32, budgetMin = 80, budgetMax = 380, merchantChancePercent = 30 },
-                new StarTable.Row { requiredRep = 560, baseVisits = 44, budgetMin = 150, budgetMax = 650, merchantChancePercent = 35 },
-                new StarTable.Row { requiredRep = 1250, baseVisits = 58, budgetMin = 250, budgetMax = 1000, merchantChancePercent = 40 },
+                new StarTable.Row { requiredRep = 200, baseVisits = 32, budgetMin = 80, budgetMax = 380, merchantChancePercent = 30 },
+                new StarTable.Row { requiredRep = 480, baseVisits = 44, budgetMin = 150, budgetMax = 650, merchantChancePercent = 35 },
+                new StarTable.Row { requiredRep = 1050, baseVisits = 58, budgetMin = 250, budgetMax = 1000, merchantChancePercent = 40 },
             });
             EditorUtility.SetDirty(stars);
 
@@ -63,9 +63,9 @@ namespace Shop.Editor
             var counter = Fixture("counter", "カウンター", FixtureKind.Counter, ItemCategory.Tool, 250, 2, 1, false, 0, 0, 0, 0, false, false, new Color(0.55f, 0.35f, 0.2f));
             var fixtures = new List<FixtureData>
             {
-                Fixture("shelf_weapon", "武器棚", FixtureKind.Shelf, ItemCategory.Weapon, 100, 1, 1, false, 3, 40, 0, 0, true, true, new Color(0.75f, 0.3f, 0.3f)),
-                Fixture("shelf_armor", "防具棚", FixtureKind.Shelf, ItemCategory.Armor, 100, 1, 1, false, 3, 40, 0, 0, true, true, new Color(0.3f, 0.45f, 0.8f)),
-                Fixture("shelf_tool", "道具棚", FixtureKind.Shelf, ItemCategory.Tool, 100, 1, 1, false, 8, 15, 0, 0, true, true, new Color(0.35f, 0.7f, 0.35f)),
+                Fixture("shelf_weapon", "武器棚", FixtureKind.Shelf, ItemCategory.Weapon, 100, 1, 1, false, 4, 40, 0, 0, true, true, new Color(0.75f, 0.3f, 0.3f)),
+                Fixture("shelf_armor", "防具棚", FixtureKind.Shelf, ItemCategory.Armor, 100, 1, 1, false, 4, 40, 0, 0, true, true, new Color(0.3f, 0.45f, 0.8f)),
+                Fixture("shelf_tool", "道具棚", FixtureKind.Shelf, ItemCategory.Tool, 100, 1, 1, false, 10, 15, 0, 0, true, true, new Color(0.35f, 0.7f, 0.35f)),
                 counter,
                 Fixture("bargain_table", "特売台", FixtureKind.Shelf, ItemCategory.Rare, 200, 1, 1, false, 2, 15, 0, 1, false, false, new Color(0.9f, 0.75f, 0.2f)),
                 Fixture("plant", "観葉植物", FixtureKind.Decor, ItemCategory.Tool, 80, 1, 1, false, 0, 0, 1, 0, false, false, new Color(0.2f, 0.5f, 0.25f)),
@@ -85,6 +85,7 @@ namespace Shop.Editor
 
             // 表にならない値は BalanceConfig の初期値（shousaisekkei.md 3.2）
             var balance = Load<BalanceConfig>($"{Root}/BalanceConfig.asset");
+            balance.startMoney = 800;
             balance.initialLayout = new List<BalanceConfig.InitialFixture>
             {
                 new BalanceConfig.InitialFixture { fixture = counter, origin = new Vector2Int(4, 1) },

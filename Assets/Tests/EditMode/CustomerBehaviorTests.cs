@@ -66,7 +66,7 @@ namespace Shop.Tests.EditMode
             Assert.That(EmotesOf(b, c), Is.EqualTo(new[] { EmoteKind.TooExpensive }));
             Assert.That(c.Wants[0].Fail, Is.EqualTo(FailKind.TooExpensive));
             Assert.That(LeftOf(b, c).Result, Is.EqualTo(CustomerResult.None));
-            Assert.That(shelf.Displayed, Is.EqualTo(3));
+            Assert.That(shelf.Displayed, Is.EqualTo(4));
         }
 
         [Test]

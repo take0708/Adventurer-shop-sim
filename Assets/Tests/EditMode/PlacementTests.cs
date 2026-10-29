@@ -50,10 +50,10 @@ namespace Shop.Tests.EditMode
         }
 
         [Test]
-        public void StartsWithCounterAnd500GAnd3FreeShelves()
+        public void StartsWithCounterAnd800GAnd3FreeShelves()
         {
             var session = new GameSession(TestConfig.Step1(), 1);
-            Assert.That(session.State.Money, Is.EqualTo(500));
+            Assert.That(session.State.Money, Is.EqualTo(800));
             Assert.That(session.State.FreeShelvesLeft, Is.EqualTo(3));
             Assert.That(session.Layout.CounterCount, Is.EqualTo(1));
             Assert.That(session.Layout.Fixtures[0].PaidCost, Is.EqualTo(0));
@@ -116,9 +116,10 @@ namespace Shop.Tests.EditMode
         [Test]
         public void UT_LAY_04_NotEnoughMoney_FreeShelvesWorkWithZeroMoney()
         {
-            // 200 + 300 で所持金をちょうど 0 にする
+            // 200 + 300 + 300 で所持金（800G）をちょうど 0 にする
             Assert.That(Place("bargain_table", 0, 4).Ok, Is.True);
             Assert.That(Place("armor_stand", 1, 4).Ok, Is.True);
+            Assert.That(Place("armor_stand", 0, 1).Ok, Is.True);
             Assert.That(_session.State.Money, Is.EqualTo(0));
             AssertFailWithoutChange(() => Place("plant", 0, 2), FailReason.NotEnoughMoney);
 
@@ -175,13 +176,13 @@ namespace Shop.Tests.EditMode
         public void UT_LAY_07_RefundIsFullPaidCost_FreeShelfRefundsZero()
         {
             Assert.That(Place("plant", 0, 2).Ok, Is.True);
-            Assert.That(_session.State.Money, Is.EqualTo(420));
+            Assert.That(_session.State.Money, Is.EqualTo(720));
             int plantId = _session.Layout.Fixtures.Last().Id;
             _session.DrainEvents();
 
             Assert.That(_session.RefundOf(plantId), Is.EqualTo(80));
             Assert.That(_session.RemoveFixture(plantId).Ok, Is.True);
-            Assert.That(_session.State.Money, Is.EqualTo(500));
+            Assert.That(_session.State.Money, Is.EqualTo(800));
             var money = _session.DrainEvents().OfType<MoneyChangedEvent>().Single();
             Assert.That(money.Delta, Is.EqualTo(80));
             Assert.That(money.Reason, Is.EqualTo(MoneyReason.Refund));
@@ -192,7 +193,7 @@ namespace Shop.Tests.EditMode
             int shelfId = _session.Layout.Fixtures.Last().Id;
             _session.DrainEvents();
             Assert.That(_session.RemoveFixture(shelfId).Ok, Is.True);
-            Assert.That(_session.State.Money, Is.EqualTo(500));
+            Assert.That(_session.State.Money, Is.EqualTo(800));
             Assert.That(_session.State.FreeShelvesLeft, Is.EqualTo(2));
             Assert.That(_session.DrainEvents().OfType<MoneyChangedEvent>(), Is.Empty);
         }
@@ -208,7 +209,7 @@ namespace Shop.Tests.EditMode
             Assert.That(_session.Layout.Stage, Is.EqualTo(2));
             Assert.That(_session.Layout.Width, Is.EqualTo(8));
             Assert.That(_session.Layout.Height, Is.EqualTo(6));
-            Assert.That(_session.State.Money, Is.EqualTo(10500 - 1500));
+            Assert.That(_session.State.Money, Is.EqualTo(10800 - 1500));
             Assert.That(counter.Origin, Is.EqualTo(T(4, 1)));
             Assert.That(_session.Layout.FixtureAt(T(5, 1)), Is.SameAs(counter));
             Assert.That(_session.Layout.Entrance, Is.EqualTo(T(2, 0)));
@@ -238,7 +239,7 @@ namespace Shop.Tests.EditMode
 
             // 自分が今いるマスと重なる移動はできる。移動は無料
             Assert.That(_session.MoveFixture(rugId, T(1, 3)).Ok, Is.True);
-            Assert.That(_session.State.Money, Is.EqualTo(350));
+            Assert.That(_session.State.Money, Is.EqualTo(800 - 150));
             Assert.That(_session.Layout.FixtureAt(T(0, 2)), Is.Null);
             Assert.That(_session.Layout.FixtureAt(T(2, 4)).Id, Is.EqualTo(rugId));
 

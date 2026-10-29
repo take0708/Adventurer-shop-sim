@@ -22,7 +22,7 @@ namespace Shop.Data
         public int totalMonths = 24;
 
         [Header("お金・評判")]
-        public int startMoney = 500;
+        public int startMoney = 800;
         public int repFull = 2;
         public int repPartial = 0;
         public int repNone = -2;
