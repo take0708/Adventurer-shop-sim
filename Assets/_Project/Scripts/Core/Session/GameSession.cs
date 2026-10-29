@@ -5,7 +5,7 @@ namespace Shop.Core
 {
     /// <summary>
     /// Core の窓口（shousaisekkei.md 4 章）。Tick で進め、コマンドで操作し、DrainEvents でイベントを受け取る。
-    /// M5 まで: 時間、配置、棚、客と会計、問屋、月末の集計、評判と星。行商人は M6、年末と終了は M7 で足す。
+    /// M6 まで: 時間、配置と拡張、棚、客と会計、問屋と行商人、月末の集計、評判と星。年末と終了は M7 で足す。
     /// </summary>
     public sealed class GameSession
     {
@@ -32,6 +32,7 @@ namespace Shop.Core
         public IReadOnlyList<Counter> Counters => _counters;
         /// <summary>店内にいる客。CustomerId の小さい順。</summary>
         public IReadOnlyList<Customer> Customers => _customers;
+        public Merchant Merchant { get; }
         public bool IsEnded => Clock.IsFinished;
         /// <summary>今月の来店予定の人数。</summary>
         public int PlannedVisits => _spawner.PlannedCount;
@@ -70,6 +71,7 @@ namespace Shop.Core
             _factory = new CustomerFactory(config, Random);
             _wholesaler = new Wholesaler(this);
             _reputation = new ReputationSystem(this);
+            Merchant = new Merchant(this);
             CurrentReport = new MonthlyReport(1, 0);
 
             // 初期配置は無料で置く。無料枠は減らさない（shousaisekkei.md 4.2）
@@ -77,6 +79,7 @@ namespace Shop.Core
 
             // 1 か月目の準備
             _spawner.PlanMonth(State.Star, Layout.Ambience);
+            Merchant.PlanMonth(State.Star);
 
             Emit(new SessionStartedEvent(Now));
         }
@@ -98,6 +101,7 @@ namespace Shop.Core
             for (int i = 0; i < _customers.Count; i++) Brain.Tick(_customers[i]);
             for (int i = 0; i < _counters.Count; i++) _counters[i].Tick();
             for (int i = 0; i < _shelves.Count; i++) _shelves[i].Tick();
+            Merchant.Tick(t);
             _customers.RemoveAll(c => c.State == CustomerState.Gone);
 
             var clockEvents = Clock.Advance();
@@ -128,6 +132,7 @@ namespace Shop.Core
             // 翌月の準備
             CurrentReport = new MonthlyReport(month + 1, State.Reputation);
             _spawner.PlanMonth(State.Star, Layout.Ambience);
+            Merchant.PlanMonth(State.Star);
         }
 
         /// <summary>ためたイベントを返して空にする。返したリストは次の DrainEvents まで有効。</summary>
@@ -292,6 +297,13 @@ namespace Shop.Core
             return _wholesaler.Buy(item, count);
         }
 
+        /// <summary>行商人から限定品を買う（shousaisekkei.md 9.1）。特売台がなくても買えて倉庫に入る。</summary>
+        public CommandResult BuyFromMerchant(int count)
+        {
+            if (IsEnded) return CommandResult.Fail(FailReason.GameOver);
+            return Merchant.Buy(count);
+        }
+
         /// <summary>
         /// デバッグ用: 倉庫に品を直接入れる（問屋のない M3 で遊ぶため。shousaisekkei.md 14 章）。
         /// 問屋（M4）ができたら UI からは呼ばない。
@@ -309,6 +321,18 @@ namespace Shop.Core
 
         /// <summary>DebugStarUpAtMonthEnd を押してあり、今月の月末に次の星へ上がる予定か。</summary>
         public bool DebugStarUpPending => _debugStarUp;
+
+        /// <summary>デバッグ用: 行商人を次の Tick で来させる（行商人パネルを早く確かめるため）。</summary>
+        public void DebugCallMerchant()
+        {
+            if (!IsEnded) Merchant.DebugArriveNext(State.Star, Clock.TickInMonth);
+        }
+
+        /// <summary>デバッグ用: お金を足す（拡張を早く確かめるため）。月の集計には数えない。</summary>
+        public void DebugAddMoney(int amount)
+        {
+            if (amount != 0) Pay(amount, MoneyReason.Refund);
+        }
 
         /// <summary>デバッグ用: 評判を足す。</summary>
         public void DebugAddReputation(int amount)

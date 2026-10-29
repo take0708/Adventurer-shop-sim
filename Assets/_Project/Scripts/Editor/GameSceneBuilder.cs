@@ -42,6 +42,7 @@ namespace Shop.Editor
             var shelves = new GameObject("Shelves").AddComponent<ShelfView>();
             var counters = new GameObject("Counters").AddComponent<CounterView>();
             var customers = new GameObject("Customers").AddComponent<CustomerView>();
+            var merchantView = new GameObject("Merchant").AddComponent<MerchantView>();
             var floating = new GameObject("FloatingText").AddComponent<FloatingText>();
             var bubbles = new GameObject("CommentBubbles").AddComponent<CommentBubbles>();
             var placement = new GameObject("PlacementMode").AddComponent<PlacementMode>();
@@ -50,6 +51,8 @@ namespace Shop.Editor
             var menu = ui.AddComponent<BottomMenu>();
             var wholesaler = ui.AddComponent<WholesalerPanel>();
             var shelfPanel = ui.AddComponent<ShelfAssignPanel>();
+            var expand = ui.AddComponent<ExpandPanel>();
+            var merchantPanel = ui.AddComponent<MerchantPanel>();
             var modal = ui.AddComponent<ModalQueue>();
 
             Set(runner, "_database", db);
@@ -60,6 +63,10 @@ namespace Shop.Editor
             Set(shelves, "_runner", runner);
             Set(counters, "_runner", runner);
             Set(customers, "_runner", runner);
+            Set(merchantView, "_runner", runner);
+            Set(merchantView, "_camera", cam);
+            Set(merchantView, "_panel", merchantPanel);
+            Set(merchantView, "_placement", placement);
             Set(floating, "_runner", runner);
             Set(floating, "_camera", cam);
             Set(bubbles, "_table", comments);
@@ -72,14 +79,18 @@ namespace Shop.Editor
             Set(menu, "_runner", runner);
             Set(menu, "_placement", placement);
             Set(menu, "_wholesaler", wholesaler);
+            Set(menu, "_expand", expand);
+            Set(menu, "_merchant", merchantPanel);
             Set(menu, "_modal", modal);
+            Set(expand, "_runner", runner);
+            Set(merchantPanel, "_runner", runner);
             Set(wholesaler, "_runner", runner);
             Set(shelfPanel, "_runner", runner);
             Set(shelfPanel, "_camera", cam);
             Set(shelfPanel, "_placement", placement);
             Set(modal, "_runner", runner);
-            // 描き直しの順: 床 → 配置物 → 棚の中身 → カウンター → 客 → 文字 → 配置モード → パネル → 月末などのダイアログ
-            SetList(router, "_handlers", new List<Object> { grid, fixtures, shelves, counters, customers, floating, bubbles, placement, wholesaler, shelfPanel, modal });
+            // 描き直しの順: 床 → 配置物 → 棚の中身 → カウンター → 客 → 行商人 → 文字 → 配置モード → パネル → 月末などのダイアログ
+            SetList(router, "_handlers", new List<Object> { grid, fixtures, shelves, counters, customers, merchantView, floating, bubbles, placement, wholesaler, shelfPanel, expand, merchantPanel, modal });
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings(ScenePath);

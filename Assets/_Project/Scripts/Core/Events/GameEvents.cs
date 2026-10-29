@@ -106,6 +106,24 @@ namespace Shop.Core
         }
     }
 
+    /// <summary>行商人が来た。LeaveTick は月の中の Tick。</summary>
+    public sealed class MerchantArrivedEvent : GameEvent
+    {
+        public ItemDef Item { get; }
+        public int LeaveTick { get; }
+
+        public MerchantArrivedEvent(int tick, ItemDef item, int leaveTick) : base(tick)
+        {
+            Item = item;
+            LeaveTick = leaveTick;
+        }
+    }
+
+    public sealed class MerchantLeftEvent : GameEvent
+    {
+        public MerchantLeftEvent(int tick) : base(tick) { }
+    }
+
     public sealed class WarehouseChangedEvent : GameEvent
     {
         public ItemDef Item { get; }
