@@ -12,7 +12,7 @@ namespace Shop.Game
     /// </summary>
     public sealed class ResultDialog : MonoBehaviour
     {
-        const float Width = 440f, Height = 420f;
+        const float Width = 460f, Height = 500f;
         public const string TitleScene = "Title";
 
         [SerializeField] GameRunner _runner;

@@ -42,14 +42,17 @@ namespace Shop.Game
         {
             if (_big == null)
             {
-                _big = new GUIStyle(GUI.skin.label) { fontSize = 44, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+                _big = new GUIStyle(GUI.skin.label) { fontSize = 44, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = false };
                 _big.normal.textColor = new Color(1f, 0.9f, 0.6f);
             }
-            const float w = 360f;
+            const float w = 560f;
             var rect = new Rect((Screen.width - w) / 2, Screen.height * 0.18f, w, Screen.height * 0.7f);
             GUILayout.BeginArea(rect);
             GUILayout.Label(_title, _big, GUILayout.Height(80));
             GUILayout.Space(30);
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.BeginVertical(GUILayout.Width(360));
             bool start = GUILayout.Button("スタート", GUILayout.Height(48));
             GUILayout.Space(8);
             bool sound = SoundOn;
@@ -57,8 +60,11 @@ namespace Shop.Game
             _credits = GUILayout.Toggle(_credits, "クレジット", GUI.skin.button, GUILayout.Height(32));
             if (_credits)
             {
-                GUILayout.Box("企画・制作: （未定）\n素材: （未定）\nMade with Unity", GUILayout.ExpandWidth(true));
+                GUILayout.Box("企画・制作: （未定）\n素材: （未定）\nフォント: M PLUS Rounded 1c（SIL Open Font License 1.1）\nMade with Unity", GUILayout.ExpandWidth(true));
             }
+            GUILayout.EndVertical();
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
             GUILayout.EndArea();
 
             if (start) SceneManager.LoadScene(GameScene);

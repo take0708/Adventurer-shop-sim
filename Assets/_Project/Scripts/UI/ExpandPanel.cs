@@ -11,7 +11,7 @@ namespace Shop.Game
     /// </summary>
     public sealed class ExpandPanel : MonoBehaviour, IGameEventHandler
     {
-        const float Width = 380f, Height = 300f;
+        const float Width = 420f, Height = 330f;
 
         [SerializeField] GameRunner _runner;
 

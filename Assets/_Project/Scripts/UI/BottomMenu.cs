@@ -22,7 +22,7 @@ namespace Shop.Game
             if (session == null || _placement.IsOpen || _expand.IsOpen || _merchant.IsOpen || (_modal != null && _modal.IsShowing)) return;
             var m = session.Merchant;
             bool merchant = m.State == MerchantState.Present;
-            // デバッグ用のボタンはエディタと開発ビルドだけに出す
+            // デバッグ用のボタン（「D:」）はエディタと開発ビルドだけに出す
             bool debug = Debug.isDebugBuild;
 
             var rect = new Rect(8, Screen.height - 52, Screen.width - 16, 44);
@@ -55,16 +55,16 @@ namespace Shop.Game
                     // 月末の判定の直前に、次の星に足りない分を足す（月末までに評判が減っても必ず上がる）
                     GUI.enabled = !session.DebugStarUpPending;
                     string label = session.DebugStarUpPending
-                        ? $"デバッグ: 月末に ★{session.State.Star + 1}\n（予約済み）"
-                        : $"デバッグ: 月末に ★{session.State.Star + 1} へ";
-                    if (Button(GUILayout.Button(label, GUILayout.Height(40), GUILayout.Width(170)))) session.DebugStarUpAtMonthEnd();
+                        ? $"D: ★{session.State.Star + 1} 予約済み"
+                        : $"D: 月末に ★{session.State.Star + 1}";
+                    if (Button(GUILayout.Button(label, GUILayout.Height(40), GUILayout.Width(120)))) session.DebugStarUpAtMonthEnd();
                     GUI.enabled = true;
                 }
-                if (!merchant && Button(GUILayout.Button("デバッグ: 行商人を呼ぶ", GUILayout.Height(40), GUILayout.Width(170))))
+                if (!merchant && Button(GUILayout.Button("D: 行商人", GUILayout.Height(40), GUILayout.Width(90))))
                     session.DebugCallMerchant();
-                if (Button(GUILayout.Button("デバッグ: +2000G", GUILayout.Height(40), GUILayout.Width(130))))
+                if (Button(GUILayout.Button("D: +2000G", GUILayout.Height(40), GUILayout.Width(90))))
                     session.DebugAddMoney(2000);
-                if (Button(GUILayout.Button("デバッグ: 月末まで進める", GUILayout.Height(40), GUILayout.Width(170))))
+                if (Button(GUILayout.Button("D: 月末へ", GUILayout.Height(40), GUILayout.Width(90))))
                     _runner.DebugSkipToMonthEnd();
             }
             GUILayout.FlexibleSpace();

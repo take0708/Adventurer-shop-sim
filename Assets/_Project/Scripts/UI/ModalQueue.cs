@@ -95,7 +95,7 @@ namespace Shop.Game
     /// </summary>
     public static class StarUpDialog
     {
-        const float Width = 460f, Height = 260f;
+        const float Width = 460f, Height = 290f;
         static GUIStyle _big, _center;
 
         /// <summary>描いて、OK が押されたら true。</summary>
@@ -135,7 +135,7 @@ namespace Shop.Game
     /// <summary>年末審査（SC-10、kihonsekkei.md 7.4）。その年に増えた評判、今の星、売上、ひとこと講評。OK / Enter / Space で閉じる。</summary>
     public static class YearReviewDialog
     {
-        const float Width = 400f, Height = 300f;
+        const float Width = 400f, Height = 330f;
         static GUIStyle _title, _comment;
 
         /// <summary>描いて、OK が押されたら true。</summary>
@@ -187,7 +187,7 @@ namespace Shop.Game
     /// <summary>月末収支（SC-08、shousaisekkei.md 11.4）。OK / Enter / Space で閉じる。</summary>
     public static class MonthlyReportDialog
     {
-        const float Width = 340f, Height = 380f;
+        const float Width = 360f, Height = 450f;
 
         /// <summary>描いて、OK が押されたら true。</summary>
         public static bool Draw(MonthlyReport r, GameSession session)

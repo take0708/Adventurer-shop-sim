@@ -9,7 +9,9 @@ namespace Shop.Game
     /// </summary>
     public sealed class Hud : MonoBehaviour
     {
-        const float Width = 420f;
+        const float Width = 460f;
+        /// <summary>同梱の日本語フォントは行が高いので、3 行が収まる高さにする。</summary>
+        public const float Height = 104f;
 
         [SerializeField] GameRunner _runner;
 
@@ -19,7 +21,7 @@ namespace Shop.Game
             if (session == null) return;
             var clock = session.Clock;
 
-            var area = new Rect(Screen.width - Width - 8, 8, Width, 88);
+            var area = new Rect(Screen.width - Width - 8, 8, Width, Height);
             ImGuiBlocker.Register(area);
             GUILayout.BeginArea(area, GUI.skin.box);
             GUILayout.BeginHorizontal();
@@ -40,13 +42,13 @@ namespace Shop.Game
 
             GUILayout.BeginHorizontal();
             // 月の進み
-            var bar = GUILayoutUtility.GetRect(150, 18, GUILayout.Width(150));
+            var bar = GUILayoutUtility.GetRect(130, 18, GUILayout.Width(130));
             GUI.Box(bar, GUIContent.none);
             GUI.Box(new Rect(bar.x, bar.y, bar.width * clock.MonthProgress, bar.height), GUIContent.none);
-            GUILayout.Label($"客 {session.Customers.Count} 人（今月 {session.PlannedVisits} 人来店）", GUILayout.Width(170));
+            GUILayout.Label($"客 {session.Customers.Count} 人（今月 {session.PlannedVisits} 人）", GUILayout.Width(160));
 
             bool userPaused = _runner.IsPausedBy(PauseReason.User);
-            if (GUILayout.Toggle(userPaused, "⏸", GUI.skin.button, GUILayout.Width(28)) != userPaused)
+            if (GUILayout.Toggle(userPaused, "||", GUI.skin.button, GUILayout.Width(30)) != userPaused)
             {
                 if (userPaused) _runner.Resume(PauseReason.User);
                 else _runner.Pause(PauseReason.User);

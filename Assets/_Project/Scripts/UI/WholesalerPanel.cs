@@ -17,6 +17,7 @@ namespace Shop.Game
 
         readonly Dictionary<ItemDef, int> _counts = new Dictionary<ItemDef, int>();
         string _message = "";
+        Vector2 _scroll;
 
         public bool IsOpen { get; private set; }
 
@@ -42,13 +43,15 @@ namespace Shop.Game
         void OnGUI()
         {
             if (!IsOpen || Session == null) return;
-            var rect = new Rect(Screen.width - Width - 8, 104, Width, Screen.height - 170);
+            var rect = new Rect(Screen.width - Width - 8, Hud.Height + 16, Width, Screen.height - Hud.Height - 82);
             ImGuiBlocker.Register(rect);
             GUILayout.BeginArea(rect, GUI.skin.box);
             GUILayout.Label("仕入れ（問屋）");
             GUILayout.Label($"所持金 {Session.State.Money}G");
 
             int total = 0;
+            // 画面が小さい（WebGL は 960×600）と品が収まらないので、品の一覧はスクロールにする
+            _scroll = GUILayout.BeginScrollView(_scroll);
             foreach (var item in Session.Config.Items)
             {
                 if (item.IsRare) continue;
@@ -75,6 +78,7 @@ namespace Shop.Game
                 }
                 GUI.enabled = true;
             }
+            GUILayout.EndScrollView();
 
             GUILayout.Space(6);
             GUILayout.Label($"合計 {total}G" + (total > Session.State.Money ? "（お金が足りません）" : ""));

@@ -12,7 +12,7 @@ namespace Shop.Game
     /// </summary>
     public sealed class MerchantPanel : MonoBehaviour, IGameEventHandler
     {
-        const float Width = 400f, Height = 380f;
+        const float Width = 420f, Height = 420f;
 
         [SerializeField] GameRunner _runner;
 

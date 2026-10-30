@@ -56,7 +56,7 @@
 
 - [x] 詳細設計で基本設計を補った K-01〜K-13 を kihonsekkei.md に反映した（[kihonsekkei.md 11.1](kihonsekkei.md#111-詳細設計で補った事項k-01k-13)、2026-10-24）
 - [x] K-09: `Shop.Tests.EditMode.asmdef` に `Shop.Data` の参照を足し、[kousei.md 3.2](kousei.md#32-アセンブリ定義案) の表も直した（2026-10-24）
-- [ ] 画面（HUD・パネル・ダイアログ・浮き文字）は仮の IMGUI。日本語フォント（T-10、M8）を決めたら uGUI ＋ TextMeshPro にまとめて置き換える
+- [ ] 画面（HUD・パネル・ダイアログ・浮き文字）は仮の IMGUI。日本語フォントは M PLUS Rounded 1c に決めた（2026-10-30）。uGUI ＋ TextMeshPro への置き換えは素材（T-11）が決まってから
 - [x] Assets/Scenes/SampleScene.unity を消した（Title シーンを作ったため。2026-10-29）
 - [ ] コミットに使うメールアドレスを GitHub の noreply アドレスに変えるか決める（最初のコミットは gmail のアドレス。[kousei.md 10 章](kousei.md#10-決まっていないこと)）
 

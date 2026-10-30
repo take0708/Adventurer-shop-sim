@@ -15,6 +15,7 @@ namespace Shop.Editor
     {
         const string ScenePath = "Assets/_Project/Scenes/Game.unity";
         const string TitleScenePath = "Assets/_Project/Scenes/Title.unity";
+        const string FontPath = "Assets/_Project/Fonts/MPLUSRounded1c-Regular.ttf";
 
         [MenuItem("Shop/Build Game Scene")]
         public static void Build()
@@ -57,6 +58,7 @@ namespace Shop.Editor
             var modal = ui.AddComponent<ModalQueue>();
             var result = ui.AddComponent<ResultDialog>();
             var submitter = ui.AddComponent<LogScoreSubmitter>();
+            var font = ui.AddComponent<ImGuiFont>();
 
             Set(runner, "_database", db);
             Set(runner, "_router", router);
@@ -95,6 +97,7 @@ namespace Shop.Editor
             Set(modal, "_result", result);
             Set(result, "_runner", runner);
             Set(result, "_submitter", submitter);
+            Set(font, "_font", AssetDatabase.LoadAssetAtPath<Font>(FontPath));
             // 描き直しの順: 床 → 配置物 → 棚の中身 → カウンター → 客 → 行商人 → 文字 → 配置モード → パネル → 月末などのダイアログ
             SetList(router, "_handlers", new List<Object> { grid, fixtures, shelves, counters, customers, merchantView, floating, bubbles, placement, wholesaler, shelfPanel, expand, merchantPanel, modal });
 
@@ -114,7 +117,9 @@ namespace Shop.Editor
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.22f, 0.3f, 0.22f);
             camGo.transform.position = new Vector3(0, 0, -10);
-            new GameObject("Title").AddComponent<TitleScreen>();
+            var title = new GameObject("Title");
+            title.AddComponent<TitleScreen>();
+            Set(title.AddComponent<ImGuiFont>(), "_font", AssetDatabase.LoadAssetAtPath<Font>(FontPath));
 
             EditorSceneManager.SaveScene(scene, TitleScenePath);
             AddToBuildSettings(TitleScenePath, 0);
